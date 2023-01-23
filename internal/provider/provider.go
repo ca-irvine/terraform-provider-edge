@@ -1,0 +1,128 @@
+package provider
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"log"
+	"net/http"
+	"net/url"
+	"sync"
+
+	"github.com/ca-irvine/terraform-provider-edge/internal/model"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+)
+
+const (
+	headerKeyID       = "X-API-KEY-ID"
+	headerKey         = "X-API-KEY"
+	headerUA          = "User-Agent"
+	headerContentType = "Content-Type"
+)
+
+const (
+	applicationJSON = "application/json"
+)
+
+func init() {
+	schema.DescriptionKind = schema.StringMarkdown
+	client = &http.Client{}
+}
+
+func New(version string) func() *schema.Provider {
+	return func() *schema.Provider {
+		p := &schema.Provider{
+			Schema: map[string]*schema.Schema{
+				"api_key_id": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc("EDGE_API_KEY_ID", nil),
+				},
+				"api_key": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc("EDGE_API_KEY", nil),
+				},
+				"endpoint": {
+					Type:        schema.TypeString,
+					Optional:    true,
+					DefaultFunc: schema.EnvDefaultFunc("EDGE_API_ENDPOINT", nil),
+				},
+			},
+			ResourcesMap: map[string]*schema.Resource{
+				"cairvine_edge_value": resourceEdgeValue(),
+			},
+		}
+
+		p.ConfigureContextFunc = configure(version, p)
+
+		return p
+	}
+}
+
+func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (any, diag.Diagnostics) {
+	return func(ctx context.Context, data *schema.ResourceData) (any, diag.Diagnostics) {
+		api := &config{
+			m:        &sync.Mutex{},
+			ua:       p.UserAgent("terraform-provider-edge", version),
+			keyID:    data.Get("api_key_id").(string),
+			key:      data.Get("api_key").(string),
+			endpoint: data.Get("endpoint").(string),
+		}
+		log.Println("[INFO] Initializing edge client")
+		return api, nil
+	}
+}
+
+type config struct {
+	m        *sync.Mutex
+	ua       string
+	keyID    string
+	key      string
+	endpoint string
+}
+
+var client *http.Client
+
+func (v *config) GetValue(ctx context.Context, id string) error {
+	const path = "/service.Value/Get"
+	return nil
+}
+
+func (v *config) CreateValue(ctx context.Context, value *model.Value) error {
+	const path = "/service.Value/Create"
+
+	u, err := url.JoinPath(v.endpoint, path)
+	if err != nil {
+		return err
+	}
+
+	j, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, u, bytes.NewReader(j))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set(headerKeyID, v.keyID)
+	req.Header.Set(headerKey, v.key)
+	req.Header.Set(headerUA, v.ua)
+	req.Header.Set(headerContentType, applicationJSON)
+	req.WithContext(ctx)
+	_, err = client.Do(req)
+	return err
+}
+
+func (v *config) UpdateValue(ctx context.Context, value *model.Value) error {
+	const path = "/service.Value/Update"
+	return nil
+}
+
+func (v *config) DeleteValue(ctx context.Context, id string) error {
+	const path = "/service.Value/Delete"
+	return nil
+}
