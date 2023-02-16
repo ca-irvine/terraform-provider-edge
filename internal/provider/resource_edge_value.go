@@ -94,7 +94,7 @@ func resourceEdgeValue() *schema.Resource {
 			},
 			"targeting": {
 				Description: "Value targeting expression. Google CEL is supported.",
-				Type:        schema.TypeSet,
+				Type:        schema.TypeList,
 				Optional:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -118,61 +118,65 @@ func resourceEdgeValue() *schema.Resource {
 	}
 }
 
-func mapValueBooleanEvaluations(variants model.ValueVariants, v any) {
+func mapValueBooleanEvaluations(_ context.Context, variants model.ValueVariants, v any) {
 	set := v.(*schema.Set).List()
 	for i := range set {
 		m := set[i].(map[string]any)
 		key := m["variant"].(string)
 		value := m["value"].(bool)
-		variants[key] = model.ValueEvaluation{BooleanValue: value}
+		variants[key] = model.ValueEvaluation{BooleanValue: &model.ValueBooleanValue{Value: value}}
 	}
 }
 
-func mapValueStringEvaluations(variants model.ValueVariants, v any) {
+func mapValueStringEvaluations(_ context.Context, variants model.ValueVariants, v any) {
 	set := v.(*schema.Set).List()
 	for i := range set {
 		m := set[i].(map[string]any)
 		key := m["variant"].(string)
 		value := m["value"].(string)
-		variants[key] = model.ValueEvaluation{StringValue: value}
+		variants[key] = model.ValueEvaluation{StringValue: &model.ValueStringValue{Value: value}}
 	}
 }
 
-func mapValueJSONEvaluations(variants model.ValueVariants, v any) error {
+func mapValueJSONEvaluations(ctx context.Context, variants model.ValueVariants, v any) error {
 	set := v.(*schema.Set).List()
 	for i := range set {
 		m := set[i].(map[string]any)
 		key := m["variant"].(string)
 		value := m["value"].(string)
-		eval := model.ValueEvaluation{}
-		err := json.Unmarshal([]byte(value), &eval.JSONValue)
+		eval := new(model.ValueJSONValue)
+		err := json.Unmarshal([]byte(value), &eval.Value)
 		if err != nil {
 			return err
 		}
-		variants[key] = eval
+		tflog.Debug(ctx, "mapValueJSONEvaluations", map[string]interface{}{"jsonValue": eval})
+		variants[key] = model.ValueEvaluation{JSONValue: eval}
 	}
 	return nil
 }
 
-func buildValueVariants(d *schema.ResourceData) (model.ValueVariants, error) {
+func buildValueVariants(ctx context.Context, d *schema.ResourceData) (model.ValueVariants, error) {
 	variants := model.ValueVariants{}
 	types := make([]bool, 0, 3)
 
 	boolSet, hasBool := d.GetOk("boolean_value")
 	if hasBool {
-		mapValueBooleanEvaluations(variants, boolSet)
+		tflog.Debug(ctx, "has boolean value")
+		mapValueBooleanEvaluations(ctx, variants, boolSet)
 		types = append(types, hasBool)
 	}
 
 	stringSet, hasString := d.GetOk("string_value")
 	if hasString {
-		mapValueStringEvaluations(variants, stringSet)
+		tflog.Debug(ctx, "has string value")
+		mapValueStringEvaluations(ctx, variants, stringSet)
 		types = append(types, hasString)
 	}
 
 	jsonSet, hasJSON := d.GetOk("json_value")
 	if hasJSON {
-		err := mapValueJSONEvaluations(variants, jsonSet)
+		tflog.Debug(ctx, "has json value")
+		err := mapValueJSONEvaluations(ctx, variants, jsonSet)
 		if err != nil {
 			return nil, err
 		}
@@ -186,16 +190,16 @@ func buildValueVariants(d *schema.ResourceData) (model.ValueVariants, error) {
 	return variants, nil
 }
 
-func buildValueTargeting(d *schema.ResourceData) (*model.ValueTargeting, error) {
-	targetingSet, ok := d.GetOk("targeting")
+func buildValueTargeting(_ context.Context, d *schema.ResourceData) (*model.ValueTargeting, error) {
+	targetingList, ok := d.GetOk("targeting")
 	if !ok {
 		return &model.ValueTargeting{}, nil
 	}
 
 	rules := make([]model.ValueTargetingRule, 0, 5)
-	set := targetingSet.(*schema.Set).List()
-	for i := range set {
-		m := set[i].(map[string]any)
+	list := targetingList.([]any)
+	for i := range list {
+		m := list[i].(map[string]any)
 		variant := m["variant"].(string)
 		spec := m["spec"].(string)
 		exp := m["exp"].(string)
@@ -216,12 +220,12 @@ func resourceValueCreate(ctx context.Context, d *schema.ResourceData, meta any) 
 	enabled := d.Get("enabled").(bool)
 	defaultVariant := d.Get("default_variant").(string)
 
-	variants, err := buildValueVariants(d)
+	variants, err := buildValueVariants(ctx, d)
 	if err != nil {
 		return diag.Errorf("variant block %s", err)
 	}
 
-	targeting, err := buildValueTargeting(d)
+	targeting, err := buildValueTargeting(ctx, d)
 	if err != nil {
 		return diag.Errorf("targeting block %s", err)
 	}
@@ -234,6 +238,7 @@ func resourceValueCreate(ctx context.Context, d *schema.ResourceData, meta any) 
 		Variants:       variants,
 		Targeting:      targeting,
 	}
+	tflog.Debug(ctx, "value", map[string]interface{}{"request": value})
 
 	client := meta.(*config)
 	err = client.CreateValue(ctx, value)
@@ -249,24 +254,69 @@ func resourceValueCreate(ctx context.Context, d *schema.ResourceData, meta any) 
 }
 
 func resourceValueRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	id := d.Get("value_id").(string)
+
 	client := meta.(*config)
-	_ = client
+	_, err := client.GetValue(ctx, id)
+	if err != nil {
+		return diag.Errorf("get error %s", err)
+	}
+
+	d.SetId(id)
+
+	tflog.Trace(ctx, "get a value resource")
 
 	return nil
 }
 
 func resourceValueUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	client := meta.(*config)
-	_ = client
+	id := d.Get("value_id").(string)
+	description := d.Get("description").(string)
+	enabled := d.Get("enabled").(bool)
+	defaultVariant := d.Get("default_variant").(string)
 
-	tflog.Trace(ctx, "updated a value resource")
+	variants, err := buildValueVariants(ctx, d)
+	if err != nil {
+		return diag.Errorf("variant block %s", err)
+	}
+
+	targeting, err := buildValueTargeting(ctx, d)
+	if err != nil {
+		return diag.Errorf("targeting block %s", err)
+	}
+
+	value := &model.Value{
+		ID:             id,
+		Enabled:        enabled,
+		Description:    description,
+		DefaultVariant: defaultVariant,
+		Variants:       variants,
+		Targeting:      targeting,
+	}
+
+	client := meta.(*config)
+	err = client.UpdateValue(ctx, value)
+	if err != nil {
+		return diag.Errorf("update error %s", err)
+	}
+
+	d.SetId(id)
+
+	tflog.Trace(ctx, "update a value resource")
 
 	return nil
 }
 
 func resourceValueDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	id := d.Get("value_id").(string)
+
 	client := meta.(*config)
-	_ = client
+
+	if err := client.DeleteValue(ctx, id); err != nil {
+		return diag.Errorf("delete error %s", err)
+	}
+
+	d.SetId(id)
 
 	tflog.Trace(ctx, "deleted a value resource")
 

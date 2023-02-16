@@ -11,3 +11,10 @@ testacc:
 	EDGE_API_KEY=$(EDGE_API_KEY) \
 	EDGE_API_ENDPOINT=$(EDGE_API_ENDPOINT) \
 	go test -race -parallel 3 ./... -v $(TESTARGS) -timeout 120m
+
+.PHONY: build-local
+build-local: PROVIDER_VERSION ?= 0.0.1
+build-local:
+	go build -o terraform-provider-cairvine_v$(PROVIDER_VERSION)
+	mkdir -p ~/.terraform.d/plugins/local/edu/cairvine/$(PROVIDER_VERSION)/darwin_amd64
+	mv terraform-provider-cairvine_v$(PROVIDER_VERSION)  ~/.terraform.d/plugins/local/edu/cairvine/$(PROVIDER_VERSION)/darwin_amd64
