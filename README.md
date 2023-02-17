@@ -1,1 +1,1 @@
-# terraform-provider-cairvine
+# terraform-provider-edge
