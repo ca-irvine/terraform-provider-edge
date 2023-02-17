@@ -7,7 +7,7 @@ import (
 )
 
 var providerFactories = map[string]func() (*schema.Provider, error){
-	"cairvine": func() (*schema.Provider, error) {
+	"edge": func() (*schema.Provider, error) {
 		return New("dev")(), nil
 	},
 }
