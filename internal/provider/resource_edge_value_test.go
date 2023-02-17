@@ -17,6 +17,21 @@ func TestAccResourceEdgeValue_BooleanValue(t *testing.T) {
 		"http://localhost:8018/service.Value/Create",
 		httpmock.NewStringResponder(200, "{}"),
 	)
+	mock.RegisterResponder(
+		http.MethodPost,
+		"http://localhost:8018/service.Value/Get",
+		httpmock.NewStringResponder(200, "{}"),
+	)
+	mock.RegisterResponder(
+		http.MethodPost,
+		"http://localhost:8018/service.Value/Update",
+		httpmock.NewStringResponder(200, "{}"),
+	)
+	mock.RegisterResponder(
+		http.MethodPost,
+		"http://localhost:8018/service.Value/Delete",
+		httpmock.NewStringResponder(200, "{}"),
+	)
 	client.Transport = mock
 
 	resource.UnitTest(t, resource.TestCase{
@@ -56,6 +71,21 @@ func TestAccResourceEdgeValue_StringValue(t *testing.T) {
 		"http://localhost:8018/service.Value/Create",
 		httpmock.NewStringResponder(200, "{}"),
 	)
+	mock.RegisterResponder(
+		http.MethodPost,
+		"http://localhost:8018/service.Value/Get",
+		httpmock.NewStringResponder(200, "{}"),
+	)
+	mock.RegisterResponder(
+		http.MethodPost,
+		"http://localhost:8018/service.Value/Update",
+		httpmock.NewStringResponder(200, "{}"),
+	)
+	mock.RegisterResponder(
+		http.MethodPost,
+		"http://localhost:8018/service.Value/Delete",
+		httpmock.NewStringResponder(200, "{}"),
+	)
 	client.Transport = mock
 
 	resource.UnitTest(t, resource.TestCase{
@@ -85,6 +115,21 @@ func TestAccResourceEdgeValue_JSONValue(t *testing.T) {
 	mock.RegisterResponder(
 		http.MethodPost,
 		"http://localhost:8018/service.Value/Create",
+		httpmock.NewStringResponder(200, "{}"),
+	)
+	mock.RegisterResponder(
+		http.MethodPost,
+		"http://localhost:8018/service.Value/Get",
+		httpmock.NewStringResponder(200, "{}"),
+	)
+	mock.RegisterResponder(
+		http.MethodPost,
+		"http://localhost:8018/service.Value/Update",
+		httpmock.NewStringResponder(200, "{}"),
+	)
+	mock.RegisterResponder(
+		http.MethodPost,
+		"http://localhost:8018/service.Value/Delete",
 		httpmock.NewStringResponder(200, "{}"),
 	)
 	client.Transport = mock

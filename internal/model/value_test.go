@@ -24,7 +24,7 @@ func TestValueTargetingRuleSpecFrom(t *testing.T) {
 			t.Parallel()
 			got := ValueTargetingRuleSpecFrom(tt.v)
 			if got != tt.want {
-				t.Fatalf("expected %d, but got %d", tt.want, got)
+				t.Fatalf("expected %s, but got %s", tt.want, got)
 			}
 		})
 	}
