@@ -138,7 +138,7 @@ func mapValueStringEvaluations(_ context.Context, variants model.ValueVariants, 
 	}
 }
 
-func mapValueJSONEvaluations(ctx context.Context, variants model.ValueVariants, v any) error {
+func mapValueJSONEvaluations(_ context.Context, variants model.ValueVariants, v any) error {
 	set := v.(*schema.Set).List()
 	for i := range set {
 		m := set[i].(map[string]any)
@@ -149,7 +149,6 @@ func mapValueJSONEvaluations(ctx context.Context, variants model.ValueVariants, 
 		if err != nil {
 			return err
 		}
-		tflog.Debug(ctx, "mapValueJSONEvaluations", map[string]interface{}{"jsonValue": eval})
 		variants[key] = model.ValueEvaluation{JSONValue: eval}
 	}
 	return nil
@@ -161,21 +160,18 @@ func buildValueVariants(ctx context.Context, d *schema.ResourceData) (model.Valu
 
 	boolSet, hasBool := d.GetOk("boolean_value")
 	if hasBool {
-		tflog.Debug(ctx, "has boolean value")
 		mapValueBooleanEvaluations(ctx, variants, boolSet)
 		types = append(types, hasBool)
 	}
 
 	stringSet, hasString := d.GetOk("string_value")
 	if hasString {
-		tflog.Debug(ctx, "has string value")
 		mapValueStringEvaluations(ctx, variants, stringSet)
 		types = append(types, hasString)
 	}
 
 	jsonSet, hasJSON := d.GetOk("json_value")
 	if hasJSON {
-		tflog.Debug(ctx, "has json value")
 		err := mapValueJSONEvaluations(ctx, variants, jsonSet)
 		if err != nil {
 			return nil, err
@@ -238,7 +234,6 @@ func resourceValueCreate(ctx context.Context, d *schema.ResourceData, meta any) 
 		Variants:       variants,
 		Targeting:      targeting,
 	}
-	tflog.Debug(ctx, "value", map[string]interface{}{"request": value})
 
 	client := meta.(*config)
 	err = client.CreateValue(ctx, value)

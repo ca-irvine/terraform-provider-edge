@@ -12,7 +12,6 @@ import (
 	"sync"
 
 	"github.com/ca-irvine/terraform-provider-edge/internal/model"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -109,7 +108,6 @@ func (v *config) GetValue(ctx context.Context, id string) (*model.Value, error) 
 
 	b, err := v.do(ctx, req)
 
-	tflog.Debug(ctx, "response", map[string]interface{}{"body": string(b)})
 	value := new(model.Value)
 	if err = json.Unmarshal(b, value); err != nil {
 		return nil, err
@@ -129,7 +127,6 @@ func (v *config) CreateValue(ctx context.Context, value *model.Value) error {
 	if err != nil {
 		return err
 	}
-	tflog.Debug(ctx, "CreateValue", map[string]interface{}{"json": string(j)})
 
 	req, err := http.NewRequest(http.MethodPost, u, bytes.NewReader(j))
 	if err != nil {
@@ -163,8 +160,6 @@ func (v *config) UpdateValue(ctx context.Context, value *model.Value) error {
 	if err != nil {
 		return err
 	}
-
-	tflog.Debug(ctx, "UpdateValue", map[string]interface{}{"request": string(j)})
 
 	_, err = v.do(ctx, req)
 
