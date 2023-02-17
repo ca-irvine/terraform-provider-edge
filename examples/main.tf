@@ -10,9 +10,22 @@ terraform {
 
 
 provider "cairvine" {
-  api_key_id = "XXXX"
-  api_key    = "XXXX"
-  endpoint   = "http://localhost:8018"
+  api_key_id = var.api_key_id
+  api_key    = var.api_key
+  endpoint   = var.endpoint
+}
+
+variable "api_key_id" {
+  type = string
+}
+
+variable "api_key" {
+  type = string
+}
+
+
+variable "endpoint" {
+  type = string
 }
 
 resource "cairvine_edge_value" "demo_bool" {
@@ -82,12 +95,16 @@ resource "cairvine_edge_value" "demo_json" {
 
   json_value {
     variant = "json01"
-    value   = "{\"name\": \"json01\"}"
+    value   = jsonencode({
+      "name" : "json01"
+    })
   }
 
   json_value {
     variant = "json02"
-    value   = "{\"name\": \"json02\"}"
+    value   = jsonencode({
+      "name" : "json02"
+    })
   }
 
   targeting {
