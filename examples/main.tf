@@ -1,15 +1,13 @@
 terraform {
   required_providers {
-    cairvine = {
-      source  = "local/edu/cairvine"
+    edge = {
+      source = "ca-irvine/edge"
       version = "0.0.1"
     }
   }
-  required_version = ">= 1.2.5"
 }
 
-
-provider "cairvine" {
+provider "edge" {
   api_key_id = var.api_key_id
   api_key    = var.api_key
   endpoint   = var.endpoint
@@ -23,12 +21,11 @@ variable "api_key" {
   type = string
 }
 
-
 variable "endpoint" {
   type = string
 }
 
-resource "cairvine_edge_value" "demo_bool" {
+resource "edge_value" "demo_bool" {
   value_id        = "demo-bool-value"
   enabled         = true
   description     = "demo bool value"
@@ -57,7 +54,7 @@ resource "cairvine_edge_value" "demo_bool" {
   }
 }
 
-resource "cairvine_edge_value" "demo_string" {
+resource "edge_value" "demo_string" {
   value_id        = "demo-string-value"
   enabled         = true
   description     = "demo string value"
@@ -86,8 +83,7 @@ resource "cairvine_edge_value" "demo_string" {
   }
 }
 
-
-resource "cairvine_edge_value" "demo_json" {
+resource "edge_value" "demo_json" {
   value_id        = "demo-json-value"
   enabled         = true
   description     = "demo json value"
@@ -119,4 +115,3 @@ resource "cairvine_edge_value" "demo_json" {
     exp     = "userId == 'XXX'"
   }
 }
-

@@ -53,7 +53,7 @@ func New(version string) func() *schema.Provider {
 				},
 			},
 			ResourcesMap: map[string]*schema.Resource{
-				"cairvine_edge_value": resourceEdgeValue(),
+				"edge_value": resourceEdgeValue(),
 			},
 		}
 
