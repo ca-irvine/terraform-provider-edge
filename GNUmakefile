@@ -16,5 +16,5 @@ testacc:
 build-local: PROVIDER_VERSION ?= 0.0.1
 build-local:
 	go build -o terraform-provider-edge_v$(PROVIDER_VERSION)
-	mkdir -p ~/.terraform.d/plugins/local/edu/cairvine/$(PROVIDER_VERSION)/darwin_amd64
-	mv terraform-provider-edge_v$(PROVIDER_VERSION)  ~/.terraform.d/plugins/local/edu/cairvine/$(PROVIDER_VERSION)/darwin_amd64
+	mkdir -p ~/.terraform.d/plugins/local/edu/edge/$(PROVIDER_VERSION)/darwin_amd64
+	mv terraform-provider-edge_v$(PROVIDER_VERSION)  ~/.terraform.d/plugins/local/edu/edge/$(PROVIDER_VERSION)/darwin_amd64
