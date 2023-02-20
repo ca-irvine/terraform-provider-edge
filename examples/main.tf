@@ -1,8 +1,8 @@
 terraform {
   required_providers {
     edge = {
-      source = "ca-irvine/edge"
-      version = "0.0.1"
+      source  = "ca-irvine/edge"
+      version = "0.1.0"
     }
   }
 }
