@@ -106,7 +106,7 @@ func (v *config) GetValue(ctx context.Context, id string) (*model.Value, error) 
 		return nil, err
 	}
 
-	b, err := v.do(ctx, req)
+	b, err := v.do(ctx, req, false)
 
 	value := new(model.Value)
 	if err = json.Unmarshal(b, value); err != nil {
@@ -133,7 +133,7 @@ func (v *config) CreateValue(ctx context.Context, value *model.Value) error {
 		return err
 	}
 
-	_, err = v.do(ctx, req)
+	_, err = v.do(ctx, req, true)
 
 	return err
 }
@@ -161,7 +161,7 @@ func (v *config) UpdateValue(ctx context.Context, value *model.Value) error {
 		return err
 	}
 
-	_, err = v.do(ctx, req)
+	_, err = v.do(ctx, req, true)
 
 	return err
 }
@@ -184,12 +184,16 @@ func (v *config) DeleteValue(ctx context.Context, id string) error {
 		return err
 	}
 
-	_, err = v.do(ctx, req)
+	_, err = v.do(ctx, req, true)
 
 	return err
 }
 
-func (v *config) do(ctx context.Context, req *http.Request) ([]byte, error) {
+func (v *config) do(ctx context.Context, req *http.Request, useMutex bool) ([]byte, error) {
+	if useMutex {
+		v.m.Lock()
+		defer v.m.Unlock()
+	}
 	req.Header.Set(headerKeyID, v.keyID)
 	req.Header.Set(headerKey, v.key)
 	req.Header.Set(headerUA, v.ua)
