@@ -38,7 +38,7 @@ type ValueTargeting struct {
 type ValueTargetingRule struct {
 	Variant string                 `json:"variant"`
 	Spec    ValueTargetingRuleSpec `json:"spec"`
-	Exp     string                 `json:"exp"`
+	Expr    string                 `json:"expr"`
 }
 
 type ValueTargetingRuleSpec string

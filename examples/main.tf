@@ -2,7 +2,7 @@ terraform {
   required_providers {
     edge = {
       source  = "ca-irvine/edge"
-      version = "0.1.0"
+      version = "0.1.2"
     }
   }
 }
@@ -44,13 +44,13 @@ resource "edge_value" "demo_bool" {
   targeting {
     variant = "on"
     spec    = "cel"
-    exp     = "env == 'dev'"
+    expr    = "env == 'dev'"
   }
 
   targeting {
     variant = "on"
     spec    = "cel"
-    exp     = "userId == 'XXX'"
+    expr    = "userId == 'XXX'"
   }
 }
 
@@ -73,13 +73,13 @@ resource "edge_value" "demo_string" {
   targeting {
     variant = "string02"
     spec    = "cel"
-    exp     = "env == 'dev'"
+    expr    = "env == 'dev'"
   }
 
   targeting {
     variant = "string02"
     spec    = "cel"
-    exp     = "userId == 'XXX'"
+    expr    = "userId == 'XXX'"
   }
 }
 
@@ -106,12 +106,12 @@ resource "edge_value" "demo_json" {
   targeting {
     variant = "json02"
     spec    = "cel"
-    exp     = "env == 'dev'"
+    expr    = "env == 'dev'"
   }
 
   targeting {
     variant = "json02"
     spec    = "cel"
-    exp     = "userId == 'XXX'"
+    expr    = "userId == 'XXX'"
   }
 }
