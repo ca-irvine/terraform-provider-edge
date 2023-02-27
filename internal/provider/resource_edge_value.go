@@ -203,7 +203,7 @@ func buildValueTargeting(_ context.Context, d *schema.ResourceData) (*model.Valu
 		rules = append(rules, model.ValueTargetingRule{
 			Variant: variant,
 			Spec:    specInt,
-			Exp:     exp,
+			Expr:    exp,
 		})
 	}
 

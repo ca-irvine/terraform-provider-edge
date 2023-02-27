@@ -52,10 +52,10 @@ func TestAccResourceEdgeValue_BooleanValue(t *testing.T) {
 					resource.TestCheckResourceAttr("edge_value.test-bool-value", "targeting.#", "2"),
 					resource.TestCheckResourceAttr("edge_value.test-bool-value", "targeting.0.variant", "on"),
 					resource.TestCheckResourceAttr("edge_value.test-bool-value", "targeting.0.spec", "cel"),
-					resource.TestCheckResourceAttr("edge_value.test-bool-value", "targeting.0.exp", "env == 'dev'"),
+					resource.TestCheckResourceAttr("edge_value.test-bool-value", "targeting.0.expr", "env == 'dev'"),
 					resource.TestCheckResourceAttr("edge_value.test-bool-value", "targeting.1.variant", "on"),
 					resource.TestCheckResourceAttr("edge_value.test-bool-value", "targeting.1.spec", "cel"),
-					resource.TestCheckResourceAttr("edge_value.test-bool-value", "targeting.1.exp", "userId == 'XXX'"),
+					resource.TestCheckResourceAttr("edge_value.test-bool-value", "targeting.1.expr", "userId == 'XXX'"),
 				),
 			},
 		},
@@ -175,13 +175,13 @@ resource "edge_value" "test-bool-value" {
   targeting {
     variant = "on"
     spec = "cel"
-    exp = "env == 'dev'"
+    expr = "env == 'dev'"
   }
 
   targeting {
     variant = "on"
     spec = "cel"
-    exp = "userId == 'XXX'"
+    expr = "userId == 'XXX'"
   }
 }`
 }
