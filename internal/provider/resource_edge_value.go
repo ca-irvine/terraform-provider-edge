@@ -107,7 +107,7 @@ func resourceEdgeValue() *schema.Resource {
 							Type:        schema.TypeString,
 							Required:    true,
 						},
-						"exp": {
+						"expr": {
 							Type:     schema.TypeString,
 							Required: true,
 						},
@@ -198,12 +198,12 @@ func buildValueTargeting(_ context.Context, d *schema.ResourceData) (*model.Valu
 		m := list[i].(map[string]any)
 		variant := m["variant"].(string)
 		spec := m["spec"].(string)
-		exp := m["exp"].(string)
+		expr := m["expr"].(string)
 		specInt := model.ValueTargetingRuleSpecFrom(spec)
 		rules = append(rules, model.ValueTargetingRule{
 			Variant: variant,
 			Spec:    specInt,
-			Expr:    exp,
+			Expr:    expr,
 		})
 	}
 
