@@ -249,7 +249,7 @@ func resourceValueCreate(ctx context.Context, d *schema.ResourceData, meta any) 
 }
 
 func resourceValueRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	id := d.Get("value_id").(string)
+	id := d.Id()
 
 	client := meta.(*config)
 	_, err := client.GetValue(ctx, id)
@@ -265,7 +265,7 @@ func resourceValueRead(ctx context.Context, d *schema.ResourceData, meta any) di
 }
 
 func resourceValueUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	id := d.Get("value_id").(string)
+	id := d.Id()
 	description := d.Get("description").(string)
 	enabled := d.Get("enabled").(bool)
 	defaultVariant := d.Get("default_variant").(string)
@@ -303,7 +303,7 @@ func resourceValueUpdate(ctx context.Context, d *schema.ResourceData, meta any) 
 }
 
 func resourceValueDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	id := d.Get("value_id").(string)
+	id := d.Id()
 
 	client := meta.(*config)
 
