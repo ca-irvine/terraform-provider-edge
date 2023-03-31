@@ -114,11 +114,30 @@ func resourceEdgeValue() *schema.Resource {
 					},
 				},
 			},
+			"test": {
+				Description: "Test value targeting expression. Google CEL is supported.",
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"variables": {
+							Description: "Variables for test cases.",
+							Type:        schema.TypeMap,
+							Required:    true,
+						},
+						"expected": {
+							Description: "Expected variant.",
+							Type:        schema.TypeString,
+							Required:    true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
 
-func mapValueBooleanEvaluations(_ context.Context, variants model.ValueVariants, v any) {
+func mapValueBooleanEvaluations(variants model.ValueVariants, v any) {
 	set := v.(*schema.Set).List()
 	for i := range set {
 		m := set[i].(map[string]any)
@@ -128,7 +147,7 @@ func mapValueBooleanEvaluations(_ context.Context, variants model.ValueVariants,
 	}
 }
 
-func mapValueStringEvaluations(_ context.Context, variants model.ValueVariants, v any) {
+func mapValueStringEvaluations(variants model.ValueVariants, v any) {
 	set := v.(*schema.Set).List()
 	for i := range set {
 		m := set[i].(map[string]any)
@@ -138,7 +157,7 @@ func mapValueStringEvaluations(_ context.Context, variants model.ValueVariants, 
 	}
 }
 
-func mapValueJSONEvaluations(_ context.Context, variants model.ValueVariants, v any) error {
+func mapValueJSONEvaluations(variants model.ValueVariants, v any) error {
 	set := v.(*schema.Set).List()
 	for i := range set {
 		m := set[i].(map[string]any)
@@ -154,25 +173,25 @@ func mapValueJSONEvaluations(_ context.Context, variants model.ValueVariants, v 
 	return nil
 }
 
-func buildValueVariants(ctx context.Context, d *schema.ResourceData) (model.ValueVariants, error) {
+func buildValueVariants(d *schema.ResourceData) (model.ValueVariants, error) {
 	variants := model.ValueVariants{}
 	types := make([]bool, 0, 3)
 
 	boolSet, hasBool := d.GetOk("boolean_value")
 	if hasBool {
-		mapValueBooleanEvaluations(ctx, variants, boolSet)
+		mapValueBooleanEvaluations(variants, boolSet)
 		types = append(types, hasBool)
 	}
 
 	stringSet, hasString := d.GetOk("string_value")
 	if hasString {
-		mapValueStringEvaluations(ctx, variants, stringSet)
+		mapValueStringEvaluations(variants, stringSet)
 		types = append(types, hasString)
 	}
 
 	jsonSet, hasJSON := d.GetOk("json_value")
 	if hasJSON {
-		err := mapValueJSONEvaluations(ctx, variants, jsonSet)
+		err := mapValueJSONEvaluations(variants, jsonSet)
 		if err != nil {
 			return nil, err
 		}
@@ -186,7 +205,7 @@ func buildValueVariants(ctx context.Context, d *schema.ResourceData) (model.Valu
 	return variants, nil
 }
 
-func buildValueTargeting(_ context.Context, d *schema.ResourceData) (*model.ValueTargeting, error) {
+func buildValueTargeting(d *schema.ResourceData) (*model.ValueTargeting, error) {
 	targetingList, ok := d.GetOk("targeting")
 	if !ok {
 		return &model.ValueTargeting{}, nil
@@ -210,20 +229,44 @@ func buildValueTargeting(_ context.Context, d *schema.ResourceData) (*model.Valu
 	return &model.ValueTargeting{Rules: rules}, nil
 }
 
+func buildEvaluationTests(d *schema.ResourceData) ([]*model.EvaluationTest, error) {
+	test, ok := d.GetOk("test")
+	if !ok {
+		return []*model.EvaluationTest{}, nil
+	}
+
+	list := test.([]any)
+	tests := make([]*model.EvaluationTest, 0, len(list))
+	for i := range list {
+		m := list[i].(map[string]any)
+		tests = append(tests, &model.EvaluationTest{
+			Variables: m["variables"].(map[string]any),
+			Expected:  m["expected"].(string),
+		})
+	}
+
+	return tests, nil
+}
+
 func resourceValueCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	id := d.Get("value_id").(string)
 	description := d.Get("description").(string)
 	enabled := d.Get("enabled").(bool)
 	defaultVariant := d.Get("default_variant").(string)
 
-	variants, err := buildValueVariants(ctx, d)
+	variants, err := buildValueVariants(d)
 	if err != nil {
 		return diag.Errorf("variant block %s", err)
 	}
 
-	targeting, err := buildValueTargeting(ctx, d)
+	targeting, err := buildValueTargeting(d)
 	if err != nil {
 		return diag.Errorf("targeting block %s", err)
+	}
+
+	tests, err := buildEvaluationTests(d)
+	if err != nil {
+		return diag.Errorf("test block %s", err)
 	}
 
 	value := &model.Value{
@@ -233,6 +276,7 @@ func resourceValueCreate(ctx context.Context, d *schema.ResourceData, meta any) 
 		DefaultVariant: defaultVariant,
 		Variants:       variants,
 		Targeting:      targeting,
+		Tests:          tests,
 	}
 
 	client := meta.(*config)
@@ -270,14 +314,19 @@ func resourceValueUpdate(ctx context.Context, d *schema.ResourceData, meta any) 
 	enabled := d.Get("enabled").(bool)
 	defaultVariant := d.Get("default_variant").(string)
 
-	variants, err := buildValueVariants(ctx, d)
+	variants, err := buildValueVariants(d)
 	if err != nil {
 		return diag.Errorf("variant block %s", err)
 	}
 
-	targeting, err := buildValueTargeting(ctx, d)
+	targeting, err := buildValueTargeting(d)
 	if err != nil {
 		return diag.Errorf("targeting block %s", err)
+	}
+
+	tests, err := buildEvaluationTests(d)
+	if err != nil {
+		return diag.Errorf("test block %s", err)
 	}
 
 	value := &model.Value{
@@ -287,6 +336,7 @@ func resourceValueUpdate(ctx context.Context, d *schema.ResourceData, meta any) 
 		DefaultVariant: defaultVariant,
 		Variants:       variants,
 		Targeting:      targeting,
+		Tests:          tests,
 	}
 
 	client := meta.(*config)
