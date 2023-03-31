@@ -1,14 +1,15 @@
 package model
 
 type Value struct {
-	ID             string          `json:"id"`
-	Enabled        bool            `json:"enabled"`
-	Description    string          `json:"description"`
-	DefaultVariant string          `json:"defaultVariant"`
-	Variants       ValueVariants   `json:"variants"`
-	Targeting      *ValueTargeting `json:"targeting"`
-	CreateTime     string          `json:"createTime,omitempty"`
-	UpdateTime     string          `json:"updateTime,omitempty"`
+	ID             string            `json:"id"`
+	Enabled        bool              `json:"enabled"`
+	Description    string            `json:"description"`
+	DefaultVariant string            `json:"defaultVariant"`
+	Variants       ValueVariants     `json:"variants"`
+	Targeting      *ValueTargeting   `json:"targeting"`
+	CreateTime     string            `json:"createTime,omitempty"`
+	UpdateTime     string            `json:"updateTime,omitempty"`
+	Tests          []*EvaluationTest `json:"tests,omitempty"`
 }
 
 type (
@@ -23,13 +24,20 @@ type (
 	ValueBooleanValue struct {
 		Value bool `json:"value"`
 	}
+
 	ValueStringValue struct {
 		Value string `json:"value"`
 	}
+
 	ValueJSONValue struct {
 		Value map[string]any `json:"value"`
 	}
 )
+
+type EvaluationTest struct {
+	Variables map[string]any `json:"variables"`
+	Expected  string         `json:"expected"`
+}
 
 type ValueTargeting struct {
 	Rules []ValueTargetingRule `json:"rules"`
