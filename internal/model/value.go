@@ -19,6 +19,7 @@ type (
 		BooleanValue *ValueBooleanValue `json:"booleanValue"`
 		StringValue  *ValueStringValue  `json:"stringValue"`
 		JSONValue    *ValueJSONValue    `json:"jsonValue"`
+		IntegerValue *ValueIntegerValue `json:"integerValue"`
 	}
 
 	ValueBooleanValue struct {
@@ -31,6 +32,10 @@ type (
 
 	ValueJSONValue struct {
 		Value map[string]any `json:"value"`
+	}
+
+	ValueIntegerValue struct {
+		Value int64 `json:"value"`
 	}
 )
 
