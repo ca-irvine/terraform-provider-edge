@@ -92,6 +92,23 @@ func resourceEdgeValue() *schema.Resource {
 					},
 				},
 			},
+			"integer_value": {
+				Description: "Integer value variant.",
+				Type:        schema.TypeSet,
+				Optional:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"variant": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"value": {
+							Type:     schema.TypeInt,
+							Required: true,
+						},
+					},
+				},
+			},
 			"targeting": {
 				Description: "Value targeting expression. Google CEL is supported.",
 				Type:        schema.TypeList,
@@ -173,6 +190,16 @@ func mapValueJSONEvaluations(variants model.ValueVariants, v any) error {
 	return nil
 }
 
+func mapValueIntegerEvaluations(variants model.ValueVariants, v any) {
+	set := v.(*schema.Set).List()
+	for i := range set {
+		m := set[i].(map[string]any)
+		key := m["variant"].(string)
+		value := m["value"].(int)
+		variants[key] = model.ValueEvaluation{IntegerValue: &model.ValueIntegerValue{Value: int64(value)}}
+	}
+}
+
 func buildValueVariants(d *schema.ResourceData) (model.ValueVariants, error) {
 	variants := model.ValueVariants{}
 	types := make([]bool, 0, 3)
@@ -198,8 +225,14 @@ func buildValueVariants(d *schema.ResourceData) (model.ValueVariants, error) {
 		types = append(types, hasJSON)
 	}
 
+	intSet, hasInt := d.GetOk("integer_value")
+	if hasInt {
+		mapValueIntegerEvaluations(variants, intSet)
+		types = append(types, hasInt)
+	}
+
 	if len(types) != 1 {
-		return nil, fmt.Errorf("one of `boolean_value` or `string_value` or `json_value` must be set")
+		return nil, fmt.Errorf("one of `boolean_value` or `string_value` or `json_value` or `integer_value` must be set")
 	}
 
 	return variants, nil

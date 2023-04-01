@@ -158,6 +158,52 @@ func TestAccResourceEdgeValue_JSONValue(t *testing.T) {
 	})
 }
 
+func TestAccResourceEdgeValue_IntegerValue(t *testing.T) {
+	original := client.Transport
+	defer func() { client.Transport = original }()
+	mock := httpmock.NewMockTransport()
+	mock.RegisterResponder(
+		http.MethodPost,
+		"http://localhost:8018/service.Value/Create",
+		httpmock.NewStringResponder(200, "{}"),
+	)
+	mock.RegisterResponder(
+		http.MethodPost,
+		"http://localhost:8018/service.Value/Get",
+		httpmock.NewStringResponder(200, "{}"),
+	)
+	mock.RegisterResponder(
+		http.MethodPost,
+		"http://localhost:8018/service.Value/Update",
+		httpmock.NewStringResponder(200, "{}"),
+	)
+	mock.RegisterResponder(
+		http.MethodPost,
+		"http://localhost:8018/service.Value/Delete",
+		httpmock.NewStringResponder(200, "{}"),
+	)
+	client.Transport = mock
+
+	resource.UnitTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccResourceInteger(),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("edge_value.test-integer-value", "value_id", "test-integer-value"),
+					resource.TestCheckResourceAttr("edge_value.test-integer-value", "enabled", "true"),
+					resource.TestCheckResourceAttr("edge_value.test-integer-value", "description", "test integer value"),
+					resource.TestCheckResourceAttr("edge_value.test-integer-value", "default_variant", "one"),
+					resource.TestCheckResourceAttr("edge_value.test-integer-value", "integer_value.#", "1"),
+					resource.TestCheckResourceAttr("edge_value.test-integer-value", "integer_value.0.variant", "one"),
+					resource.TestCheckResourceAttr("edge_value.test-integer-value", "integer_value.0.value", "1"),
+					resource.TestCheckResourceAttr("edge_value.test-integer-value", "targeting.#", "0"),
+				),
+			},
+		},
+	})
+}
+
 func testAccResourceBoolean() string {
 	return `
 resource "edge_value" "test-bool-value" {
@@ -224,6 +270,21 @@ resource "edge_value" "test-json-value" {
   json_value {
 	variant = "json"
 	value = "{\"key1\": \"value1\"}"
+  }
+}`
+}
+
+func testAccResourceInteger() string {
+	return `
+resource "edge_value" "test-integer-value" {
+  value_id = "test-integer-value"
+  enabled = true
+  description = "test integer value"
+  default_variant = "one"
+
+  integer_value {
+	variant = "one"
+	value = 1
   }
 }`
 }
