@@ -4,11 +4,11 @@ type Value struct {
 	ID             string            `json:"id"`
 	Enabled        bool              `json:"enabled"`
 	Description    string            `json:"description"`
-	DefaultVariant string            `json:"defaultVariant"`
+	DefaultVariant string            `json:"default_variant"`
 	Variants       ValueVariants     `json:"variants"`
 	Targeting      *ValueTargeting   `json:"targeting"`
-	CreateTime     string            `json:"createTime,omitempty"`
-	UpdateTime     string            `json:"updateTime,omitempty"`
+	CreateTime     string            `json:"create_time,omitempty"`
+	UpdateTime     string            `json:"update_time,omitempty"`
 	Tests          []*EvaluationTest `json:"tests,omitempty"`
 }
 
@@ -16,10 +16,10 @@ type (
 	ValueVariants map[string]ValueEvaluation
 
 	ValueEvaluation struct {
-		BooleanValue *ValueBooleanValue `json:"booleanValue"`
-		StringValue  *ValueStringValue  `json:"stringValue"`
-		JSONValue    *ValueJSONValue    `json:"jsonValue"`
-		IntegerValue *ValueIntegerValue `json:"integerValue"`
+		BooleanValue *ValueBooleanValue `json:"boolean_value"`
+		StringValue  *ValueStringValue  `json:"string_value"`
+		JSONValue    *ValueJSONValue    `json:"json_value"`
+		IntegerValue *ValueIntegerValue `json:"integer_value"`
 	}
 
 	ValueBooleanValue struct {
