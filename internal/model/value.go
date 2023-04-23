@@ -7,8 +7,8 @@ type Value struct {
 	DefaultVariant string            `json:"default_variant"`
 	Variants       ValueVariants     `json:"variants"`
 	Targeting      *ValueTargeting   `json:"targeting"`
-	CreateTime     string            `json:"create_time,omitempty"`
-	UpdateTime     string            `json:"update_time,omitempty"`
+	CreateTime     int64             `json:"create_time,omitempty"`
+	UpdateTime     int64             `json:"update_time,omitempty"`
 	Tests          []*EvaluationTest `json:"tests,omitempty"`
 }
 
