@@ -138,8 +138,8 @@ func resourceEdgeValue() *schema.Resource {
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"variables": {
-							Description: "Variables for test cases.",
-							Type:        schema.TypeMap,
+							Description: "Variables json string for test cases.",
+							Type:        schema.TypeString,
 							Required:    true,
 						},
 						"expected": {
@@ -272,8 +272,16 @@ func buildEvaluationTests(d *schema.ResourceData) ([]*model.EvaluationTest, erro
 	tests := make([]*model.EvaluationTest, 0, len(list))
 	for i := range list {
 		m := list[i].(map[string]any)
+
+		s := m["variables"].(string)
+		vars := map[string]any{}
+		err := json.Unmarshal([]byte(s), &vars)
+		if err != nil {
+			return nil, err
+		}
+
 		tests = append(tests, &model.EvaluationTest{
-			Variables: m["variables"].(map[string]any),
+			Variables: vars,
 			Expected:  m["expected"].(string),
 		})
 	}
