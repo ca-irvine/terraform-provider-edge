@@ -57,8 +57,7 @@ func TestAccResourceEdgeValue_BooleanValue(t *testing.T) {
 					resource.TestCheckResourceAttr("edge_value.test-bool-value", "targeting.1.spec", "cel"),
 					resource.TestCheckResourceAttr("edge_value.test-bool-value", "targeting.1.expr", "userId == 'XXX'"),
 					resource.TestCheckResourceAttr("edge_value.test-bool-value", "test.#", "1"),
-					resource.TestCheckResourceAttr("edge_value.test-bool-value", "test.0.variables.env", "test"),
-					resource.TestCheckResourceAttr("edge_value.test-bool-value", "test.0.variables.userId", "XXX"),
+					resource.TestCheckResourceAttr("edge_value.test-bool-value", "test.0.variables", "{\"count\":1,\"env\":\"test\"}"),
 					resource.TestCheckResourceAttr("edge_value.test-bool-value", "test.0.expected", "on"),
 				),
 			},
@@ -235,10 +234,10 @@ resource "edge_value" "test-bool-value" {
   }
 	
   test {
-	variables = {
+	variables = jsonencode({
 	  env = "test"
-	  userId = "XXX"
-	}
+	  count = 1
+	})
 	expected = "on"
   }
 }`
