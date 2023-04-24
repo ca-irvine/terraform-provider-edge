@@ -154,7 +154,7 @@ func resourceEdgeValue() *schema.Resource {
 	}
 }
 
-func mapValueBooleanEvaluations(variants model.ValueVariants, v any) {
+func mapValueBooleanEvaluations(variants model.ValueVariants, v any) model.ValueVariants {
 	set := v.(*schema.Set).List()
 	for i := range set {
 		m := set[i].(map[string]any)
@@ -162,9 +162,10 @@ func mapValueBooleanEvaluations(variants model.ValueVariants, v any) {
 		value := m["value"].(bool)
 		variants[key] = model.ValueEvaluation{BooleanValue: &model.ValueBooleanValue{Value: value}}
 	}
+	return variants
 }
 
-func mapValueStringEvaluations(variants model.ValueVariants, v any) {
+func mapValueStringEvaluations(variants model.ValueVariants, v any) model.ValueVariants {
 	set := v.(*schema.Set).List()
 	for i := range set {
 		m := set[i].(map[string]any)
@@ -172,9 +173,10 @@ func mapValueStringEvaluations(variants model.ValueVariants, v any) {
 		value := m["value"].(string)
 		variants[key] = model.ValueEvaluation{StringValue: &model.ValueStringValue{Value: value}}
 	}
+	return variants
 }
 
-func mapValueJSONEvaluations(variants model.ValueVariants, v any) error {
+func mapValueJSONEvaluations(variants model.ValueVariants, v any) (model.ValueVariants, error) {
 	set := v.(*schema.Set).List()
 	for i := range set {
 		m := set[i].(map[string]any)
@@ -183,14 +185,14 @@ func mapValueJSONEvaluations(variants model.ValueVariants, v any) error {
 		eval := new(model.ValueJSONValue)
 		err := json.Unmarshal([]byte(value), &eval.Value)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		variants[key] = model.ValueEvaluation{JSONValue: eval}
 	}
-	return nil
+	return variants, nil
 }
 
-func mapValueIntegerEvaluations(variants model.ValueVariants, v any) {
+func mapValueIntegerEvaluations(variants model.ValueVariants, v any) model.ValueVariants {
 	set := v.(*schema.Set).List()
 	for i := range set {
 		m := set[i].(map[string]any)
@@ -198,27 +200,28 @@ func mapValueIntegerEvaluations(variants model.ValueVariants, v any) {
 		value := m["value"].(int)
 		variants[key] = model.ValueEvaluation{IntegerValue: &model.ValueIntegerValue{Value: int64(value)}}
 	}
+	return variants
 }
 
-func buildValueVariants(d *schema.ResourceData) (model.ValueVariants, error) {
-	variants := model.ValueVariants{}
+func buildValueVariants(d *schema.ResourceData) (variants model.ValueVariants, err error) {
+	variants = model.ValueVariants{}
 	types := make([]bool, 0, 3)
 
 	boolSet, hasBool := d.GetOk("boolean_value")
 	if hasBool {
-		mapValueBooleanEvaluations(variants, boolSet)
+		variants = mapValueBooleanEvaluations(variants, boolSet)
 		types = append(types, hasBool)
 	}
 
 	stringSet, hasString := d.GetOk("string_value")
 	if hasString {
-		mapValueStringEvaluations(variants, stringSet)
+		variants = mapValueStringEvaluations(variants, stringSet)
 		types = append(types, hasString)
 	}
 
 	jsonSet, hasJSON := d.GetOk("json_value")
 	if hasJSON {
-		err := mapValueJSONEvaluations(variants, jsonSet)
+		variants, err = mapValueJSONEvaluations(variants, jsonSet)
 		if err != nil {
 			return nil, err
 		}
@@ -227,7 +230,7 @@ func buildValueVariants(d *schema.ResourceData) (model.ValueVariants, error) {
 
 	intSet, hasInt := d.GetOk("integer_value")
 	if hasInt {
-		mapValueIntegerEvaluations(variants, intSet)
+		variants = mapValueIntegerEvaluations(variants, intSet)
 		types = append(types, hasInt)
 	}
 
@@ -238,10 +241,10 @@ func buildValueVariants(d *schema.ResourceData) (model.ValueVariants, error) {
 	return variants, nil
 }
 
-func buildValueTargeting(d *schema.ResourceData) (*model.ValueTargeting, error) {
+func buildValueTargeting(d *schema.ResourceData) (model.ValueTargeting, error) {
 	targetingList, ok := d.GetOk("targeting")
 	if !ok {
-		return &model.ValueTargeting{}, nil
+		return model.ValueTargeting{}, nil
 	}
 
 	rules := make([]model.ValueTargetingRule, 0, 5)
@@ -259,7 +262,7 @@ func buildValueTargeting(d *schema.ResourceData) (*model.ValueTargeting, error) 
 		})
 	}
 
-	return &model.ValueTargeting{Rules: rules}, nil
+	return model.ValueTargeting{Rules: rules}, nil
 }
 
 func buildEvaluationTests(d *schema.ResourceData) ([]*model.EvaluationTest, error) {
@@ -327,6 +330,10 @@ func resourceValueCreate(ctx context.Context, d *schema.ResourceData, meta any) 
 	}
 
 	d.SetId(id)
+	diags := setState(d, value)
+	if diags.HasError() {
+		return diags
+	}
 
 	tflog.Trace(ctx, "created a value resource")
 
@@ -334,15 +341,11 @@ func resourceValueCreate(ctx context.Context, d *schema.ResourceData, meta any) 
 }
 
 func resourceValueRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	id := d.Id()
-
 	client := meta.(*config)
-	_, err := client.GetValue(ctx, id)
+	_, err := client.GetValue(ctx, d.Id())
 	if err != nil {
 		return diag.Errorf("get error %s", err)
 	}
-
-	d.SetId(id)
 
 	tflog.Trace(ctx, "get a value resource")
 
@@ -386,7 +389,10 @@ func resourceValueUpdate(ctx context.Context, d *schema.ResourceData, meta any) 
 		return diag.Errorf("update error %s", err)
 	}
 
-	d.SetId(id)
+	diags := setState(d, value)
+	if diags.HasError() {
+		return diags
+	}
 
 	tflog.Trace(ctx, "update a value resource")
 
@@ -402,9 +408,79 @@ func resourceValueDelete(ctx context.Context, d *schema.ResourceData, meta any) 
 		return diag.Errorf("delete error %s", err)
 	}
 
-	d.SetId(id)
+	d.SetId("")
 
 	tflog.Trace(ctx, "deleted a value resource")
+
+	return nil
+}
+
+func setState(d *schema.ResourceData, value *model.Value) diag.Diagnostics {
+	boolVariants := make([]map[string]any, 0, len(value.Variants))
+	stringVariants := make([]map[string]any, 0, len(value.Variants))
+	jsonVariants := make([]map[string]any, 0, len(value.Variants))
+	integerVariants := make([]map[string]any, 0, len(value.Variants))
+	for k, v := range value.Variants {
+		if v.BooleanValue != nil {
+			boolVariants = append(boolVariants, map[string]any{
+				"variant": k,
+				"value":   v.BooleanValue.Value,
+			})
+		}
+		if v.StringValue != nil {
+			stringVariants = append(stringVariants, map[string]any{
+				"variant": k,
+				"value":   v.StringValue.Value,
+			})
+		}
+		if v.JSONValue != nil {
+			b, err := json.Marshal(v.JSONValue.Value)
+			if err != nil {
+				return diag.Errorf("unmarshal json value error %s", err)
+			}
+			jsonVariants = append(jsonVariants, map[string]any{
+				"variant": k,
+				"value":   string(b),
+			})
+		}
+		if v.IntegerValue != nil {
+			integerVariants = append(integerVariants, map[string]any{
+				"variant": k,
+				"value":   v.IntegerValue.Value,
+			})
+		}
+	}
+
+	targetings := make([]map[string]any, 0, len(value.Targeting.Rules))
+	for _, r := range value.Targeting.Rules {
+		targetings = append(targetings, map[string]any{
+			"variant": r.Variant,
+			"spec":    model.TFValueTargetingRuleSpec(int32(r.Spec)),
+			"expr":    r.Expr,
+		})
+	}
+
+	tests := make([]map[string]any, 0, len(value.Tests))
+	for _, t := range value.Tests {
+		b, err := json.Marshal(t.Variables)
+		if err != nil {
+			return diag.Errorf("marshal test error %s", err)
+		}
+		tests = append(tests, map[string]any{
+			"variables": string(b),
+			"expected":  t.Expected,
+		})
+	}
+
+	d.Set("enabled", value.Enabled)
+	d.Set("description", value.Description)
+	d.Set("default_variant", value.DefaultVariant)
+	d.Set("boolean_value", boolVariants)
+	d.Set("string_value", stringVariants)
+	d.Set("json_value", jsonVariants)
+	d.Set("integer_value", integerVariants)
+	d.Set("targeting", targetings)
+	d.Set("test", tests)
 
 	return nil
 }

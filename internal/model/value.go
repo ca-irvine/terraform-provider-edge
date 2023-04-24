@@ -6,7 +6,7 @@ type Value struct {
 	Description    string            `json:"description"`
 	DefaultVariant string            `json:"default_variant"`
 	Variants       ValueVariants     `json:"variants"`
-	Targeting      *ValueTargeting   `json:"targeting"`
+	Targeting      ValueTargeting    `json:"targeting"`
 	CreateTime     int64             `json:"create_time,omitempty"`
 	UpdateTime     int64             `json:"update_time,omitempty"`
 	Tests          []*EvaluationTest `json:"tests,omitempty"`
@@ -54,12 +54,11 @@ type ValueTargetingRule struct {
 	Expr    string                 `json:"expr"`
 }
 
-type ValueTargetingRuleSpec string
+type ValueTargetingRuleSpec int32
 
 const (
-	ValueTargetingRuleSpecInvalid   ValueTargetingRuleSpec = "SPEC_INVALID"
-	ValueTargetingRuleSpecCEL       ValueTargetingRuleSpec = "SPEC_GOOGLE_CEL"
-	ValueTargetingRuleSpecJsonLogic ValueTargetingRuleSpec = "SPEC_JSON_LOGIC"
+	ValueTargetingRuleSpecCEL ValueTargetingRuleSpec = iota
+	ValueTargetingRuleSpecJsonLogic
 )
 
 func ValueTargetingRuleSpecFrom(v string) ValueTargetingRuleSpec {
@@ -69,7 +68,18 @@ func ValueTargetingRuleSpecFrom(v string) ValueTargetingRuleSpec {
 	case "json":
 		return ValueTargetingRuleSpecJsonLogic
 	default:
-		return ValueTargetingRuleSpecInvalid
+		return ValueTargetingRuleSpecCEL
+	}
+}
+
+func TFValueTargetingRuleSpec(v int32) string {
+	switch ValueTargetingRuleSpec(v) {
+	case ValueTargetingRuleSpecCEL:
+		return "cel"
+	case ValueTargetingRuleSpecJsonLogic:
+		return "json"
+	default:
+		return "cel"
 	}
 }
 

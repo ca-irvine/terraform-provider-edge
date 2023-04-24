@@ -1,6 +1,8 @@
 package model
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestValueTargetingRuleSpecFrom(t *testing.T) {
 	t.Parallel()
@@ -13,8 +15,8 @@ func TestValueTargetingRuleSpecFrom(t *testing.T) {
 			want: ValueTargetingRuleSpecCEL,
 		},
 		{
-			v:    "invalid",
-			want: ValueTargetingRuleSpecInvalid,
+			v:    "json",
+			want: ValueTargetingRuleSpecJsonLogic,
 		},
 	}
 
@@ -24,7 +26,7 @@ func TestValueTargetingRuleSpecFrom(t *testing.T) {
 			t.Parallel()
 			got := ValueTargetingRuleSpecFrom(tt.v)
 			if got != tt.want {
-				t.Fatalf("expected %s, but got %s", tt.want, got)
+				t.Fatalf("expected %d, but got %d", tt.want, got)
 			}
 		})
 	}

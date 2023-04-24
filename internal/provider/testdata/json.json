@@ -1,0 +1,15 @@
+{
+  "id": "test-json-value",
+  "enabled": true,
+  "description": "test json value",
+  "default_variant": "json",
+  "variants": {
+    "json": {
+      "Value": {
+        "JsonValue": {
+          "value": "{\"key1\": \"value1\"}"
+        }
+      }
+    }
+  }
+}

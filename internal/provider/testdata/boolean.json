@@ -1,0 +1,45 @@
+{
+  "id": "test-bool-value",
+  "enabled": true,
+  "description": "test bool value",
+  "default_variant": "off",
+  "variants": {
+    "on": {
+      "Value": {
+        "BooleanValue": {
+          "value": true
+        }
+      }
+    },
+    "off": {
+      "Value": {
+        "BooleanValue": {
+          "value": false
+        }
+      }
+    }
+  },
+  "targeting": {
+    "rules": [
+      {
+        "variant": "on",
+        "expr": "env == 'dev'"
+      },
+      {
+        "variant": "on",
+        "expr": "userId == 'XXX'"
+      }
+    ]
+  },
+  "create_time": 1681894730,
+  "update_time": 1682089734,
+  "tests": [
+    {
+      "variables": {
+        "env": "test",
+        "count": 1
+      },
+      "expected": "on"
+    }
+  ]
+}

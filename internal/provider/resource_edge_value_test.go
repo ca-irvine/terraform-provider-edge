@@ -1,12 +1,16 @@
 package provider
 
 import (
+	_ "embed"
 	"net/http"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/jarcoal/httpmock"
 )
+
+//go:embed testdata/boolean.json
+var booleanTestdata string
 
 func TestAccResourceEdgeValue_BooleanValue(t *testing.T) {
 	original := client.Transport
@@ -15,22 +19,22 @@ func TestAccResourceEdgeValue_BooleanValue(t *testing.T) {
 	mock.RegisterResponder(
 		http.MethodPost,
 		"http://localhost:8018/service.Value/Create",
-		httpmock.NewStringResponder(200, "{}"),
+		httpmock.NewStringResponder(200, booleanTestdata),
 	)
 	mock.RegisterResponder(
 		http.MethodPost,
 		"http://localhost:8018/service.Value/Get",
-		httpmock.NewStringResponder(200, "{}"),
+		httpmock.NewStringResponder(200, booleanTestdata),
 	)
 	mock.RegisterResponder(
 		http.MethodPost,
 		"http://localhost:8018/service.Value/Update",
-		httpmock.NewStringResponder(200, "{}"),
+		httpmock.NewStringResponder(200, booleanTestdata),
 	)
 	mock.RegisterResponder(
 		http.MethodPost,
 		"http://localhost:8018/service.Value/Delete",
-		httpmock.NewStringResponder(200, "{}"),
+		httpmock.NewStringResponder(200, booleanTestdata),
 	)
 	client.Transport = mock
 
@@ -65,6 +69,9 @@ func TestAccResourceEdgeValue_BooleanValue(t *testing.T) {
 	})
 }
 
+//go:embed testdata/string.json
+var stringTestdata string
+
 func TestAccResourceEdgeValue_StringValue(t *testing.T) {
 	original := client.Transport
 	defer func() { client.Transport = original }()
@@ -72,22 +79,22 @@ func TestAccResourceEdgeValue_StringValue(t *testing.T) {
 	mock.RegisterResponder(
 		http.MethodPost,
 		"http://localhost:8018/service.Value/Create",
-		httpmock.NewStringResponder(200, "{}"),
+		httpmock.NewStringResponder(200, stringTestdata),
 	)
 	mock.RegisterResponder(
 		http.MethodPost,
 		"http://localhost:8018/service.Value/Get",
-		httpmock.NewStringResponder(200, "{}"),
+		httpmock.NewStringResponder(200, stringTestdata),
 	)
 	mock.RegisterResponder(
 		http.MethodPost,
 		"http://localhost:8018/service.Value/Update",
-		httpmock.NewStringResponder(200, "{}"),
+		httpmock.NewStringResponder(200, stringTestdata),
 	)
 	mock.RegisterResponder(
 		http.MethodPost,
 		"http://localhost:8018/service.Value/Delete",
-		httpmock.NewStringResponder(200, "{}"),
+		httpmock.NewStringResponder(200, stringTestdata),
 	)
 	client.Transport = mock
 
@@ -111,6 +118,9 @@ func TestAccResourceEdgeValue_StringValue(t *testing.T) {
 	})
 }
 
+//go:embed testdata/json.json
+var jsonTestdata string
+
 func TestAccResourceEdgeValue_JSONValue(t *testing.T) {
 	original := client.Transport
 	defer func() { client.Transport = original }()
@@ -118,22 +128,22 @@ func TestAccResourceEdgeValue_JSONValue(t *testing.T) {
 	mock.RegisterResponder(
 		http.MethodPost,
 		"http://localhost:8018/service.Value/Create",
-		httpmock.NewStringResponder(200, "{}"),
+		httpmock.NewStringResponder(200, jsonTestdata),
 	)
 	mock.RegisterResponder(
 		http.MethodPost,
 		"http://localhost:8018/service.Value/Get",
-		httpmock.NewStringResponder(200, "{}"),
+		httpmock.NewStringResponder(200, jsonTestdata),
 	)
 	mock.RegisterResponder(
 		http.MethodPost,
 		"http://localhost:8018/service.Value/Update",
-		httpmock.NewStringResponder(200, "{}"),
+		httpmock.NewStringResponder(200, jsonTestdata),
 	)
 	mock.RegisterResponder(
 		http.MethodPost,
 		"http://localhost:8018/service.Value/Delete",
-		httpmock.NewStringResponder(200, "{}"),
+		httpmock.NewStringResponder(200, jsonTestdata),
 	)
 	client.Transport = mock
 
@@ -157,6 +167,9 @@ func TestAccResourceEdgeValue_JSONValue(t *testing.T) {
 	})
 }
 
+//go:embed testdata/integer.json
+var integerTestdata string
+
 func TestAccResourceEdgeValue_IntegerValue(t *testing.T) {
 	original := client.Transport
 	defer func() { client.Transport = original }()
@@ -164,22 +177,22 @@ func TestAccResourceEdgeValue_IntegerValue(t *testing.T) {
 	mock.RegisterResponder(
 		http.MethodPost,
 		"http://localhost:8018/service.Value/Create",
-		httpmock.NewStringResponder(200, "{}"),
+		httpmock.NewStringResponder(200, integerTestdata),
 	)
 	mock.RegisterResponder(
 		http.MethodPost,
 		"http://localhost:8018/service.Value/Get",
-		httpmock.NewStringResponder(200, "{}"),
+		httpmock.NewStringResponder(200, integerTestdata),
 	)
 	mock.RegisterResponder(
 		http.MethodPost,
 		"http://localhost:8018/service.Value/Update",
-		httpmock.NewStringResponder(200, "{}"),
+		httpmock.NewStringResponder(200, integerTestdata),
 	)
 	mock.RegisterResponder(
 		http.MethodPost,
 		"http://localhost:8018/service.Value/Delete",
-		httpmock.NewStringResponder(200, "{}"),
+		httpmock.NewStringResponder(200, integerTestdata),
 	)
 	client.Transport = mock
 
