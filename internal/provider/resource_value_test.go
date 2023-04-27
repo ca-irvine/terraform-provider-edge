@@ -3,9 +3,10 @@ package provider
 import (
 	_ "embed"
 	"net/http"
+	"sync"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/jarcoal/httpmock"
 )
 
@@ -13,8 +14,6 @@ import (
 var booleanTestdata string
 
 func TestAccResourceEdgeValue_BooleanValue(t *testing.T) {
-	original := client.Transport
-	defer func() { client.Transport = original }()
 	mock := httpmock.NewMockTransport()
 	mock.RegisterResponder(
 		http.MethodPost,
@@ -36,23 +35,32 @@ func TestAccResourceEdgeValue_BooleanValue(t *testing.T) {
 		"http://localhost:8018/service.Value/Delete",
 		httpmock.NewStringResponder(200, booleanTestdata),
 	)
+
+	client := &http.Client{
+		Transport: mock,
+	}
+	cfg := &config{
+		m:        &sync.Mutex{},
+		endpoint: "http://localhost:8018",
+		client:   client,
+	}
 	client.Transport = mock
 
 	resource.UnitTest(t, resource.TestCase{
-		ProviderFactories: providerFactories,
+		ProtoV6ProviderFactories: protoV6ProviderFactories(cfg),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceBoolean(),
+				Config: providerConfig + testAccResourceBoolean(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("edge_value.test-bool-value", "value_id", "test-bool-value"),
 					resource.TestCheckResourceAttr("edge_value.test-bool-value", "enabled", "true"),
 					resource.TestCheckResourceAttr("edge_value.test-bool-value", "description", "test bool value"),
 					resource.TestCheckResourceAttr("edge_value.test-bool-value", "default_variant", "off"),
 					resource.TestCheckResourceAttr("edge_value.test-bool-value", "boolean_value.#", "2"),
-					resource.TestCheckResourceAttr("edge_value.test-bool-value", "boolean_value.0.variant", "off"),
-					resource.TestCheckResourceAttr("edge_value.test-bool-value", "boolean_value.0.value", "false"),
-					resource.TestCheckResourceAttr("edge_value.test-bool-value", "boolean_value.1.variant", "on"),
-					resource.TestCheckResourceAttr("edge_value.test-bool-value", "boolean_value.1.value", "true"),
+					resource.TestCheckResourceAttr("edge_value.test-bool-value", "boolean_value.0.variant", "on"),
+					resource.TestCheckResourceAttr("edge_value.test-bool-value", "boolean_value.0.value", "true"),
+					resource.TestCheckResourceAttr("edge_value.test-bool-value", "boolean_value.1.variant", "off"),
+					resource.TestCheckResourceAttr("edge_value.test-bool-value", "boolean_value.1.value", "false"),
 					resource.TestCheckResourceAttr("edge_value.test-bool-value", "targeting.#", "2"),
 					resource.TestCheckResourceAttr("edge_value.test-bool-value", "targeting.0.variant", "on"),
 					resource.TestCheckResourceAttr("edge_value.test-bool-value", "targeting.0.spec", "cel"),
@@ -73,8 +81,6 @@ func TestAccResourceEdgeValue_BooleanValue(t *testing.T) {
 var stringTestdata string
 
 func TestAccResourceEdgeValue_StringValue(t *testing.T) {
-	original := client.Transport
-	defer func() { client.Transport = original }()
 	mock := httpmock.NewMockTransport()
 	mock.RegisterResponder(
 		http.MethodPost,
@@ -96,13 +102,22 @@ func TestAccResourceEdgeValue_StringValue(t *testing.T) {
 		"http://localhost:8018/service.Value/Delete",
 		httpmock.NewStringResponder(200, stringTestdata),
 	)
+
+	client := &http.Client{
+		Transport: mock,
+	}
+	cfg := &config{
+		m:        &sync.Mutex{},
+		endpoint: "http://localhost:8018",
+		client:   client,
+	}
 	client.Transport = mock
 
 	resource.UnitTest(t, resource.TestCase{
-		ProviderFactories: providerFactories,
+		ProtoV6ProviderFactories: protoV6ProviderFactories(cfg),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceString(),
+				Config: providerConfig + testAccResourceString(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("edge_value.test-string-value", "value_id", "test-string-value"),
 					resource.TestCheckResourceAttr("edge_value.test-string-value", "enabled", "true"),
@@ -122,8 +137,6 @@ func TestAccResourceEdgeValue_StringValue(t *testing.T) {
 var jsonTestdata string
 
 func TestAccResourceEdgeValue_JSONValue(t *testing.T) {
-	original := client.Transport
-	defer func() { client.Transport = original }()
 	mock := httpmock.NewMockTransport()
 	mock.RegisterResponder(
 		http.MethodPost,
@@ -145,13 +158,22 @@ func TestAccResourceEdgeValue_JSONValue(t *testing.T) {
 		"http://localhost:8018/service.Value/Delete",
 		httpmock.NewStringResponder(200, jsonTestdata),
 	)
+
+	client := &http.Client{
+		Transport: mock,
+	}
+	cfg := &config{
+		m:        &sync.Mutex{},
+		endpoint: "http://localhost:8018",
+		client:   client,
+	}
 	client.Transport = mock
 
 	resource.UnitTest(t, resource.TestCase{
-		ProviderFactories: providerFactories,
+		ProtoV6ProviderFactories: protoV6ProviderFactories(cfg),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceJSON(),
+				Config: providerConfig + testAccResourceJSON(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("edge_value.test-json-value", "value_id", "test-json-value"),
 					resource.TestCheckResourceAttr("edge_value.test-json-value", "enabled", "true"),
@@ -171,8 +193,6 @@ func TestAccResourceEdgeValue_JSONValue(t *testing.T) {
 var integerTestdata string
 
 func TestAccResourceEdgeValue_IntegerValue(t *testing.T) {
-	original := client.Transport
-	defer func() { client.Transport = original }()
 	mock := httpmock.NewMockTransport()
 	mock.RegisterResponder(
 		http.MethodPost,
@@ -194,13 +214,22 @@ func TestAccResourceEdgeValue_IntegerValue(t *testing.T) {
 		"http://localhost:8018/service.Value/Delete",
 		httpmock.NewStringResponder(200, integerTestdata),
 	)
+
+	client := &http.Client{
+		Transport: mock,
+	}
+	cfg := &config{
+		m:        &sync.Mutex{},
+		endpoint: "http://localhost:8018",
+		client:   client,
+	}
 	client.Transport = mock
 
 	resource.UnitTest(t, resource.TestCase{
-		ProviderFactories: providerFactories,
+		ProtoV6ProviderFactories: protoV6ProviderFactories(cfg),
 		Steps: []resource.TestStep{
 			{
-				Config: testAccResourceInteger(),
+				Config: providerConfig + testAccResourceInteger(),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("edge_value.test-integer-value", "value_id", "test-integer-value"),
 					resource.TestCheckResourceAttr("edge_value.test-integer-value", "enabled", "true"),

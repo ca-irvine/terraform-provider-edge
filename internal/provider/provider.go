@@ -4,16 +4,20 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
-	"io"
-	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"sync"
 
 	"github.com/ca-irvine/terraform-provider-edge/internal/model"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/go-retryablehttp"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 const (
@@ -27,53 +31,173 @@ const (
 	applicationJSON = "application/json"
 )
 
-func init() {
-	schema.DescriptionKind = schema.StringMarkdown
-	client = &http.Client{}
+var _ provider.Provider = &EdgeProvider{}
+
+type EdgeProvider struct {
+	version string
+	config  *config
 }
 
-func New(version string) func() *schema.Provider {
-	return func() *schema.Provider {
-		p := &schema.Provider{
-			Schema: map[string]*schema.Schema{
-				"api_key_id": {
-					Type:        schema.TypeString,
-					Optional:    true,
-					DefaultFunc: schema.EnvDefaultFunc("EDGE_API_KEY_ID", nil),
-				},
-				"api_key": {
-					Type:        schema.TypeString,
-					Optional:    true,
-					DefaultFunc: schema.EnvDefaultFunc("EDGE_API_KEY", nil),
-				},
-				"endpoint": {
-					Type:        schema.TypeString,
-					Optional:    true,
-					DefaultFunc: schema.EnvDefaultFunc("EDGE_API_ENDPOINT", nil),
-				},
-			},
-			ResourcesMap: map[string]*schema.Resource{
-				"edge_value": resourceEdgeValue(),
-			},
-		}
+type edgeProviderModel struct {
+	Endpoint types.String `tfsdk:"endpoint"`
+	APIKeyID types.String `tfsdk:"api_key_id"`
+	APIKey   types.String `tfsdk:"api_key"`
+}
 
-		p.ConfigureContextFunc = configure(version, p)
+func (p *EdgeProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
+	resp.TypeName = "edge"
+}
 
-		return p
+func (p *EdgeProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "Interact with Edge.",
+		Attributes: map[string]schema.Attribute{
+			"endpoint": schema.StringAttribute{
+				Required: true,
+			},
+			"api_key_id": schema.StringAttribute{
+				Required:  true,
+				Sensitive: true,
+			},
+			"api_key": schema.StringAttribute{
+				Required:  true,
+				Sensitive: true,
+			},
+		},
 	}
 }
 
-func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (any, diag.Diagnostics) {
-	return func(ctx context.Context, data *schema.ResourceData) (any, diag.Diagnostics) {
-		api := &config{
+func (p *EdgeProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	var cfg edgeProviderModel
+	diags := req.Config.Get(ctx, &cfg)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if cfg.Endpoint.IsUnknown() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("endpoint"),
+			"Unknown Edge API Endpoint",
+			"The provider cannot create the Edge API client as there is an unknown configuration value for the Edge API endpoint. "+
+				"Either target apply the source of the value first, set the value statically in the configuration, or use the EDGE_ENDPOINT environment variable.",
+		)
+	}
+
+	if cfg.APIKeyID.IsUnknown() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("api_key_id"),
+			"Unknown Edge API Key ID",
+			"The provider cannot create the Edge API client as there is an unknown configuration value for the Edge API Key ID. "+
+				"Either target apply the source of the value first, set the value statically in the configuration, or use the EDGE_API_KEY_ID environment variable.",
+		)
+	}
+
+	if cfg.APIKey.IsUnknown() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("api_key"),
+			"Unknown Edge API Key",
+			"The provider cannot create the Edge API client as there is an unknown configuration value for the Edge API Key. "+
+				"Either target apply the source of the value first, set the value statically in the configuration, or use the EDGE_API_KEY environment variable.",
+		)
+	}
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	endpoint := os.Getenv("EDGE_ENDPOINT")
+	apiKeyID := os.Getenv("EDGE_API_KEY_ID")
+	apiKey := os.Getenv("EDGE_API_KEY")
+
+	if !cfg.Endpoint.IsNull() {
+		endpoint = cfg.Endpoint.ValueString()
+	}
+
+	if !cfg.APIKeyID.IsNull() {
+		apiKeyID = cfg.APIKeyID.ValueString()
+	}
+
+	if !cfg.APIKey.IsNull() {
+		apiKey = cfg.APIKey.ValueString()
+	}
+
+	if endpoint == "" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("endpoint"),
+			"Missing Edge API Endpoint",
+			"The provider cannot create the Edge API client as there is a missing or empty value for the Edge API endpoint. "+
+				"Set the endpoint value in the configuration or use the EDGE_ENDPOINT environment variable. "+
+				"If either is already set, ensure the value is not empty.",
+		)
+	}
+
+	if apiKeyID == "" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("api_key_id"),
+			"Missing Edge API Key",
+			"The provider cannot create the Edge API client as there is a missing or empty value for the Edge API Key. "+
+				"Set the api_key value in the configuration or use the EDGE_API_KEY environment variable. "+
+				"If either is already set, ensure the value is not empty.",
+		)
+	}
+
+	if apiKey == "" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("api_key"),
+			"Missing Edge API Key",
+			"The provider cannot create the Edge API client as there is a missing or empty value for the Edge API Key. "+
+				"Set the api_key value in the configuration or use the EDGE_API_KEY environment variable. "+
+				"If either is already set, ensure the value is not empty.",
+		)
+	}
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	ctx = tflog.SetField(ctx, "edge_endpoint", endpoint)
+	ctx = tflog.SetField(ctx, "edge_api_key_id", apiKeyID)
+	ctx = tflog.SetField(ctx, "edge_api_key", apiKey)
+	ctx = tflog.MaskFieldValuesWithFieldKeys(ctx, "edge_api_key")
+
+	tflog.Debug(ctx, "Creating Edge client")
+
+	if p.config == nil {
+		retryClient := retryablehttp.NewClient()
+		retryClient.RetryMax = 5
+		rc := retryClient.StandardClient()
+		p.config = &config{
 			m:        &sync.Mutex{},
-			ua:       p.UserAgent("terraform-provider-edge", version),
-			keyID:    data.Get("api_key_id").(string),
-			key:      data.Get("api_key").(string),
-			endpoint: data.Get("endpoint").(string),
+			ua:       "terraform-provider-edge",
+			keyID:    apiKeyID,
+			key:      apiKey,
+			endpoint: endpoint,
+			client:   rc,
 		}
-		log.Println("[INFO] Initializing edge client")
-		return api, nil
+	}
+
+	resp.DataSourceData = p.config
+	resp.ResourceData = p.config
+
+	tflog.Info(ctx, "Configured Edge client", map[string]any{"success": true})
+}
+
+func (p *EdgeProvider) DataSources(_ context.Context) []func() datasource.DataSource {
+	return []func() datasource.DataSource{}
+}
+
+func (p *EdgeProvider) Resources(_ context.Context) []func() resource.Resource {
+	return []func() resource.Resource{
+		NewValueResource,
+	}
+}
+
+func New(version string) func() provider.Provider {
+	return func() provider.Provider {
+		return &EdgeProvider{
+			version: version,
+		}
 	}
 }
 
@@ -83,14 +207,12 @@ type config struct {
 	keyID    string
 	key      string
 	endpoint string
+	client   *http.Client
 }
 
-var client *http.Client
-
-func (v *config) GetValue(ctx context.Context, id string) (*model.Value, error) {
+func (c *config) GetValue(ctx context.Context, id string) (*model.Value, error) {
 	const path = "/service.Value/Get"
-
-	u, err := url.JoinPath(v.endpoint, path)
+	u, err := url.JoinPath(c.endpoint, path)
 	if err != nil {
 		return nil, err
 	}
@@ -106,69 +228,78 @@ func (v *config) GetValue(ctx context.Context, id string) (*model.Value, error) 
 		return nil, err
 	}
 
-	b, err := v.do(ctx, req, false)
+	resp, err := c.do(ctx, req, false)
+	if err != nil {
+		return nil, err
+	}
 
 	value := new(model.Value)
-	if err = json.Unmarshal(b, value); err != nil {
+	err = json.NewDecoder(resp.Body).Decode(value)
+	if err != nil {
 		return nil, err
 	}
 	return value, nil
 }
 
-func (v *config) CreateValue(ctx context.Context, value *model.Value) error {
+func (c *config) CreateValue(ctx context.Context, value *model.Value) (*model.Value, error) {
 	const path = "/service.Value/Create"
-
-	u, err := url.JoinPath(v.endpoint, path)
+	u, err := url.JoinPath(c.endpoint, path)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	j, err := json.Marshal(value)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	req, err := http.NewRequest(http.MethodPost, u, bytes.NewReader(j))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	_, err = v.do(ctx, req, true)
+	resp, err := c.do(ctx, req, true)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
 
-	return err
+	v := new(model.Value)
+	err = json.NewDecoder(resp.Body).Decode(v)
+	return v, err
 }
 
-func (v *config) UpdateValue(ctx context.Context, value *model.Value) error {
+func (c *config) UpdateValue(ctx context.Context, value *model.Value) (*model.Value, error) {
 	const path = "/service.Value/Update"
-	getVal, err := v.GetValue(ctx, value.ID)
+	u, err := url.JoinPath(c.endpoint, path)
 	if err != nil {
-		return err
-	}
-	value.CreateTime = getVal.CreateTime
-	value.UpdateTime = getVal.UpdateTime
-	u, err := url.JoinPath(v.endpoint, path)
-	if err != nil {
-		return err
+		return nil, err
 	}
 
 	j, err := json.Marshal(value)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	req, err := http.NewRequest(http.MethodPost, u, bytes.NewReader(j))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	_, err = v.do(ctx, req, true)
+	resp, err := c.do(ctx, req, true)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
 
-	return err
+	v := new(model.Value)
+	err = json.NewDecoder(resp.Body).Decode(v)
+	return v, err
 }
 
-func (v *config) DeleteValue(ctx context.Context, id string) error {
+func (c *config) DeleteValue(ctx context.Context, id string) error {
 	const path = "/service.Value/Delete"
-	u, err := url.JoinPath(v.endpoint, path)
+	u, err := url.JoinPath(c.endpoint, path)
 	if err != nil {
 		return err
 	}
@@ -184,34 +315,20 @@ func (v *config) DeleteValue(ctx context.Context, id string) error {
 		return err
 	}
 
-	_, err = v.do(ctx, req, true)
-
+	_, err = c.do(ctx, req, true)
 	return err
 }
 
-func (v *config) do(ctx context.Context, req *http.Request, useMutex bool) ([]byte, error) {
+func (c *config) do(ctx context.Context, req *http.Request, useMutex bool) (*http.Response, error) {
 	if useMutex {
-		v.m.Lock()
-		defer v.m.Unlock()
+		c.m.Lock()
+		defer c.m.Unlock()
 	}
-	req.Header.Set(headerKeyID, v.keyID)
-	req.Header.Set(headerKey, v.key)
-	req.Header.Set(headerUA, v.ua)
+	req.Header.Set(headerKeyID, c.keyID)
+	req.Header.Set(headerKey, c.key)
+	req.Header.Set(headerUA, c.ua)
 	req.Header.Set(headerContentType, applicationJSON)
 	req.WithContext(ctx)
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	body := res.Body
-	statusCd := res.StatusCode
-	defer func() { _ = body.Close() }()
-	b, err := io.ReadAll(body)
-	if err != nil {
-		return nil, err
-	}
-	if statusCd >= http.StatusBadRequest {
-		return nil, fmt.Errorf("unexpected status code %d, %s", statusCd, string(b))
-	}
-	return b, nil
+	res, err := c.client.Do(req)
+	return res, err
 }
