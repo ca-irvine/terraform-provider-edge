@@ -1,19 +1,25 @@
 package provider
 
 import (
-	"testing"
-
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 )
 
-var providerFactories = map[string]func() (*schema.Provider, error){
-	"edge": func() (*schema.Provider, error) {
-		return New("dev")(), nil
-	},
+const (
+	providerConfig = `
+provider "edge" {
+  endpoint = "http://localhost:8018"
+  api_key = "test_key"
+  api_key_id = "test_key_id"
 }
+`
+)
 
-func TestProvider(t *testing.T) {
-	if err := New("dev")().InternalValidate(); err != nil {
-		t.Fatalf("err: %s", err)
+func protoV6ProviderFactories(cfg *config) map[string]func() (tfprotov6.ProviderServer, error) {
+	return map[string]func() (tfprotov6.ProviderServer, error){
+		"edge": providerserver.NewProtocol6WithError(&EdgeProvider{
+			version: "test",
+			config:  cfg,
+		}),
 	}
 }

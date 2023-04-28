@@ -1,17 +1,17 @@
 package main
 
 import (
+	"context"
 	"flag"
 
 	"github.com/ca-irvine/terraform-provider-edge/internal/provider"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
 
 //go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs
 
 var (
 	version = "dev"
-	commit  = ""
 )
 
 func main() {
@@ -20,11 +20,10 @@ func main() {
 	flag.BoolVar(&debugMode, "debug", false, "set to true to run the provider with support for debuggers like delve")
 	flag.Parse()
 
-	opts := &plugin.ServeOpts{
-		Debug:        debugMode,
-		ProviderAddr: "registry.terraform.io/ca-irvine/edge",
-		ProviderFunc: provider.New(version),
+	opts := providerserver.ServeOpts{
+		Debug:   debugMode,
+		Address: "registry.terraform.io/ca-irvine/edge",
 	}
 
-	plugin.Serve(opts)
+	providerserver.Serve(context.Background(), provider.New(version), opts)
 }
