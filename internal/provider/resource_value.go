@@ -3,12 +3,15 @@ package provider
 import (
 	"context"
 	"encoding/json"
+	"regexp"
 
 	"github.com/ca-irvine/terraform-provider-edge/internal/model"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -136,6 +139,12 @@ func (v *ValueResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 						},
 						"value": schema.StringAttribute{
 							Required: true,
+							Validators: []validator.String{
+								stringvalidator.RegexMatches(
+									regexp.MustCompile(`^{.+}$`),
+									"Must be map object, not array",
+								),
+							},
 						},
 					},
 				},
