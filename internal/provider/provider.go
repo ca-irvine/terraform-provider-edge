@@ -242,6 +242,8 @@ func (c *config) GetValue(ctx context.Context, id string) (*model.Value, error) 
 }
 
 func (c *config) CreateValue(ctx context.Context, value *model.Value) (*model.Value, error) {
+	c.m.Lock()
+	defer c.m.Unlock()
 	const path = "/service.Value/Create"
 	u, err := url.JoinPath(c.endpoint, path)
 	if err != nil {
@@ -270,6 +272,8 @@ func (c *config) CreateValue(ctx context.Context, value *model.Value) (*model.Va
 }
 
 func (c *config) UpdateValue(ctx context.Context, value *model.Value) (*model.Value, error) {
+	c.m.Lock()
+	defer c.m.Unlock()
 	const path = "/service.Value/Update"
 	u, err := url.JoinPath(c.endpoint, path)
 	if err != nil {
@@ -298,6 +302,8 @@ func (c *config) UpdateValue(ctx context.Context, value *model.Value) (*model.Va
 }
 
 func (c *config) DeleteValue(ctx context.Context, id string) error {
+	c.m.Lock()
+	defer c.m.Unlock()
 	const path = "/service.Value/Delete"
 	u, err := url.JoinPath(c.endpoint, path)
 	if err != nil {
