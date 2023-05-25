@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -235,7 +236,8 @@ func (c *config) GetValue(ctx context.Context, id string) (*model.Value, error) 
 	}
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode >= http.StatusBadRequest || resp.StatusCode != http.StatusNotFound {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		b, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("unexpected status code: %d, %s", resp.StatusCode, string(b))
 	}
 	value := new(model.Value)
 	err = json.NewDecoder(resp.Body).Decode(value)
@@ -269,7 +271,8 @@ func (c *config) CreateValue(ctx context.Context, value *model.Value) (*model.Va
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= http.StatusBadRequest {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		b, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("unexpected status code: %d, %s", resp.StatusCode, string(b))
 	}
 	v := new(model.Value)
 	if err = json.NewDecoder(resp.Body).Decode(v); err != nil {
@@ -302,7 +305,8 @@ func (c *config) UpdateValue(ctx context.Context, value *model.Value) (*model.Va
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= http.StatusBadRequest {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		b, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("unexpected status code: %d, %s", resp.StatusCode, string(b))
 	}
 	v := new(model.Value)
 	err = json.NewDecoder(resp.Body).Decode(v)
@@ -334,7 +338,8 @@ func (c *config) DeleteValue(ctx context.Context, id string) error {
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= http.StatusBadRequest || resp.StatusCode != http.StatusNotFound {
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		b, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("unexpected status code: %d, %s", resp.StatusCode, string(b))
 	}
 	return nil
 }
