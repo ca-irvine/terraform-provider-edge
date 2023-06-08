@@ -235,7 +235,7 @@ func (c *config) GetValue(ctx context.Context, id string) (*model.Value, error) 
 		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	if resp.StatusCode >= http.StatusBadRequest || resp.StatusCode != http.StatusNotFound {
+	if resp.StatusCode >= http.StatusBadRequest && resp.StatusCode != http.StatusNotFound {
 		b, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("unexpected status code: %d, %s", resp.StatusCode, string(b))
 	}
@@ -337,7 +337,7 @@ func (c *config) DeleteValue(ctx context.Context, id string) error {
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode >= http.StatusBadRequest || resp.StatusCode != http.StatusNotFound {
+	if resp.StatusCode >= http.StatusBadRequest && resp.StatusCode != http.StatusNotFound {
 		b, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("unexpected status code: %d, %s", resp.StatusCode, string(b))
 	}
