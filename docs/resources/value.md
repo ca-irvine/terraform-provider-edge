@@ -61,6 +61,22 @@ Required:
 - `value` (String)
 - `variant` (String)
 
+Optional:
+
+- `transform` (Block List) (see [below for nested schema](#nestedblock--json_value--transform))
+
+<a id="nestedblock--json_value--transform"></a>
+### Nested Schema for `json_value.transform`
+
+Required:
+
+- `expr` (String)
+
+Optional:
+
+- `spec` (String)
+
+
 
 <a id="nestedblock--string_value"></a>
 ### Nested Schema for `string_value`

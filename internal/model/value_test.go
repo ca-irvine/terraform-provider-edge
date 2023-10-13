@@ -31,3 +31,27 @@ func TestValueTargetingRuleSpecFrom(t *testing.T) {
 		})
 	}
 }
+
+func TestValueTransformSpecFrom(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		v    string
+		want ValueTransformSpec
+	}{
+		{
+			v:    "cel",
+			want: ValueTransformSpecCEL,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run("", func(t *testing.T) {
+			t.Parallel()
+			got := ValueTransformSpecFrom(tt.v)
+			if got != tt.want {
+				t.Fatalf("expected %d, but got %d", tt.want, got)
+			}
+		})
+	}
+}

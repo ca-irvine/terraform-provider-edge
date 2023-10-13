@@ -31,7 +31,8 @@ type (
 	}
 
 	ValueJSONValue struct {
-		Value map[string]any `json:"value"`
+		Value      map[string]any    `json:"value"`
+		Transforms []*ValueTransform `json:"transforms,omitempty"`
 	}
 
 	ValueIntegerValue struct {
@@ -78,6 +79,35 @@ func TFValueTargetingRuleSpec(v int32) string {
 		return "cel"
 	case ValueTargetingRuleSpecJsonLogic:
 		return "json"
+	default:
+		return "cel"
+	}
+}
+
+type ValueTransform struct {
+	Spec ValueTransformSpec `json:"spec"`
+	Expr string             `json:"expr"`
+}
+
+type ValueTransformSpec int32
+
+const (
+	ValueTransformSpecCEL ValueTransformSpec = iota
+)
+
+func ValueTransformSpecFrom(v string) ValueTransformSpec {
+	switch v {
+	case "cel":
+		return ValueTransformSpecCEL
+	default:
+		return ValueTransformSpecCEL
+	}
+}
+
+func TFValueTransformSpec(v int32) string {
+	switch ValueTransformSpec(v) {
+	case ValueTransformSpecCEL:
+		return "cel"
 	default:
 		return "cel"
 	}

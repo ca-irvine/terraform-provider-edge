@@ -53,8 +53,9 @@ type (
 	}
 
 	valueResourceJSONValueModel struct {
-		Variant types.String `tfsdk:"variant"`
-		Value   types.String `tfsdk:"value"`
+		Variant   types.String                  `tfsdk:"variant"`
+		Value     types.String                  `tfsdk:"value"`
+		Transform []valueResourceTransformModel `tfsdk:"transform"`
 	}
 
 	valueResourceIntegerValueModel struct {
@@ -71,6 +72,11 @@ type (
 	valueResourceTestModel struct {
 		Variables types.String `tfsdk:"variables"`
 		Expected  types.String `tfsdk:"expected"`
+	}
+
+	valueResourceTransformModel struct {
+		Spec types.String `tfsdk:"spec"`
+		Expr types.String `tfsdk:"expr"`
 	}
 )
 
@@ -147,6 +153,20 @@ func (v *ValueResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 							},
 						},
 					},
+					Blocks: map[string]schema.Block{
+						"transform": schema.ListNestedBlock{
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"spec": schema.StringAttribute{
+										Optional: true,
+									},
+									"expr": schema.StringAttribute{
+										Required: true,
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 			"integer_value": schema.ListNestedBlock{
@@ -214,9 +234,17 @@ func (v *valueResourceModel) value() (*model.Value, error) {
 		if err != nil {
 			return nil, err
 		}
+		transforms := make([]*model.ValueTransform, 0, len(val.Transform))
+		for _, t := range val.Transform {
+			transforms = append(transforms, &model.ValueTransform{
+				Spec: model.ValueTransformSpecFrom(t.Spec.ValueString()),
+				Expr: t.Expr.ValueString(),
+			})
+		}
 		variants[val.Variant.ValueString()] = model.ValueEvaluation{
 			JSONValue: &model.ValueJSONValue{
-				Value: m,
+				Value:      m,
+				Transforms: transforms,
 			},
 		}
 	}

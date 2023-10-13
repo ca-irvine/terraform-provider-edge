@@ -92,25 +92,41 @@ resource "edge_value" "demo_json" {
   json_value {
     variant = "json01"
     value   = jsonencode({
-      "name" : "json01"
+      "items" : [
+        {"viewable": true, "content": "content1"},
+        {"viewable": true, "content": "content2"},
+        {"viewable": false, "content": "content3"}
+      ]
     })
+    transform {
+      spec = "cel"
+      expr = "{\"items\":items.map(item, item.viewable ? item : item.deleteKey([\"content\"]))}"
+    }
   }
 
   json_value {
-    variant = "json02"
+    variant = "json01"
     value   = jsonencode({
-      "name" : "json02"
+      "items" : [
+        {"viewable": true, "content": "content1"},
+        {"viewable": false, "content": "content2"},
+        {"viewable": false, "content": "content3"}
+      ]
     })
+    transform {
+      spec = "cel"
+      expr = "{\"items\":items.map(item, item.viewable ? item.selectKey([\"content\"]) : item)}"
+    }
   }
 
   targeting {
-    variant = "json02"
+    variant = "json01"
     spec    = "cel"
     expr    = "env == 'dev'"
   }
 
   targeting {
-    variant = "json02"
+    variant = "json01"
     spec    = "cel"
     expr    = "userId == 'XXX'"
   }
