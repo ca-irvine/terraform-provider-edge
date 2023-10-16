@@ -7,7 +7,23 @@
     "json": {
       "Value": {
         "JsonValue": {
-          "value": "{\"key1\": \"value1\"}"
+          "value": {
+            "items": [
+              {"viewable": true, "content": "content1"},
+              {"viewable": true, "content": "content2"},
+              {"viewable": false, "content": "content3"}
+            ]
+          },
+          "transforms": [
+            {
+              "spec": "cel",
+              "expr": "{\"items\":items.map(item, item.viewable ? item : item.deleteKey([\"content\"]))}"
+            },
+            {
+              "spec": "cel",
+              "expr": "{\"items\":items.map(item, item.viewable ? item.selectKey([\"content\"]) : item)}"
+            }
+          ]
         }
       }
     }

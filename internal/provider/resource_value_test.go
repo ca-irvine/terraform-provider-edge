@@ -181,7 +181,12 @@ func TestAccResourceEdgeValue_JSONValue(t *testing.T) {
 					resource.TestCheckResourceAttr("edge_value.test-json-value", "default_variant", "json"),
 					resource.TestCheckResourceAttr("edge_value.test-json-value", "json_value.#", "1"),
 					resource.TestCheckResourceAttr("edge_value.test-json-value", "json_value.0.variant", "json"),
-					resource.TestCheckResourceAttr("edge_value.test-json-value", "json_value.0.value", "{\"key1\": \"value1\"}"),
+					resource.TestCheckResourceAttr("edge_value.test-json-value", "json_value.0.value", "{\"items\":[{\"content\":\"content1\",\"viewable\":true},{\"content\":\"content2\",\"viewable\":true},{\"content\":\"content3\",\"viewable\":false}]}"),
+					resource.TestCheckResourceAttr("edge_value.test-json-value", "json_value.0.transform.#", "2"),
+					resource.TestCheckResourceAttr("edge_value.test-json-value", "json_value.0.transform.0.spec", "cel"),
+					resource.TestCheckResourceAttr("edge_value.test-json-value", "json_value.0.transform.0.expr", "{\"items\":items.map(item, item.viewable ? item : item.deleteKey([\"content\"]))}"),
+					resource.TestCheckResourceAttr("edge_value.test-json-value", "json_value.0.transform.1.spec", "cel"),
+					resource.TestCheckResourceAttr("edge_value.test-json-value", "json_value.0.transform.1.expr", "{\"items\":items.map(item, item.viewable ? item.selectKey([\"content\"]) : item)}"),
 					resource.TestCheckResourceAttr("edge_value.test-json-value", "targeting.#", "0"),
 				),
 			},
@@ -310,7 +315,21 @@ resource "edge_value" "test-json-value" {
 
   json_value {
 	variant = "json"
-	value = "{\"key1\": \"value1\"}"
+	value = jsonencode({
+	  "items": [
+		{"viewable": true, "content": "content1"},
+		{"viewable": true, "content": "content2"},
+		{"viewable": false, "content": "content3"}
+	  ]	
+	})
+	transform {
+	  spec = "cel"
+	  expr = "{\"items\":items.map(item, item.viewable ? item : item.deleteKey([\"content\"]))}"
+	}
+	transform {
+	  spec = "cel"
+	  expr = "{\"items\":items.map(item, item.viewable ? item.selectKey([\"content\"]) : item)}"
+	}
   }
 }`
 }
