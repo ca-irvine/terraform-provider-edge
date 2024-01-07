@@ -4,11 +4,11 @@ type Value struct {
 	ID             string            `json:"id"`
 	Enabled        bool              `json:"enabled"`
 	Description    string            `json:"description"`
-	DefaultVariant string            `json:"default_variant"`
+	DefaultVariant string            `json:"defaultVariant"`
 	Variants       ValueVariants     `json:"variants"`
 	Targeting      ValueTargeting    `json:"targeting"`
-	CreateTime     int64             `json:"create_time,omitempty"`
-	UpdateTime     int64             `json:"update_time,omitempty"`
+	CreateTime     string            `json:"createTime,omitempty"`
+	UpdateTime     string            `json:"updateTime,omitempty"`
 	Tests          []*EvaluationTest `json:"tests,omitempty"`
 }
 
@@ -16,10 +16,10 @@ type (
 	ValueVariants map[string]ValueEvaluation
 
 	ValueEvaluation struct {
-		BooleanValue *ValueBooleanValue `json:"boolean_value"`
-		StringValue  *ValueStringValue  `json:"string_value"`
-		JSONValue    *ValueJSONValue    `json:"json_value"`
-		IntegerValue *ValueIntegerValue `json:"integer_value"`
+		BooleanValue *ValueBooleanValue `json:"booleanValue"`
+		StringValue  *ValueStringValue  `json:"stringValue"`
+		JSONValue    *ValueJSONValue    `json:"jsonValue"`
+		IntegerValue *ValueIntegerValue `json:"integerValue"`
 	}
 
 	ValueBooleanValue struct {
@@ -73,8 +73,8 @@ func ValueTargetingRuleSpecFrom(v string) ValueTargetingRuleSpec {
 	}
 }
 
-func TFValueTargetingRuleSpec(v int32) string {
-	switch ValueTargetingRuleSpec(v) {
+func TFValueTargetingRuleSpec(v ValueTargetingRuleSpec) string {
+	switch v {
 	case ValueTargetingRuleSpecCEL:
 		return "cel"
 	case ValueTargetingRuleSpecJsonLogic:
