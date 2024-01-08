@@ -335,9 +335,17 @@ func valueState(v *model.Value) *valueResourceModel {
 				jsons = make([]valueResourceJSONValueModel, 0, len(v.Variants))
 			}
 			b, _ := json.Marshal(val.JSONValue.Value)
+			transforms := make([]valueResourceTransformModel, 0, len(val.JSONValue.Transforms))
+			for _, t := range val.JSONValue.Transforms {
+				transforms = append(transforms, valueResourceTransformModel{
+					Spec: types.StringValue(model.TFValueTransformSpec(t.Spec)),
+					Expr: types.StringValue(t.Expr),
+				})
+			}
 			jsons = append(jsons, valueResourceJSONValueModel{
-				Variant: types.StringValue(k),
-				Value:   types.StringValue(string(b)),
+				Variant:   types.StringValue(k),
+				Value:     types.StringValue(string(b)),
+				Transform: transforms,
 			})
 		}
 		if val.IntegerValue != nil {

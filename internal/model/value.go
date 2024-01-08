@@ -104,8 +104,8 @@ func ValueTransformSpecFrom(v string) ValueTransformSpec {
 	}
 }
 
-func TFValueTransformSpec(v int32) string {
-	switch ValueTransformSpec(v) {
+func TFValueTransformSpec(v ValueTransformSpec) string {
+	switch v {
 	case ValueTransformSpecCEL:
 		return "cel"
 	default:
