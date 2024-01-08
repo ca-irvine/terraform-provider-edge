@@ -9,9 +9,10 @@ testacc:
 	EDGE_API_ENDPOINT=$(EDGE_API_ENDPOINT) \
 	go test -race -parallel 3 ./... -v $(TESTARGS) -timeout 120m
 
-.PHONY: build-local
-build-local: PROVIDER_VERSION ?= 0.0.1
-build-local:
-	go build -o terraform-provider-edge_v$(PROVIDER_VERSION)
-	mkdir -p ~/.terraform.d/plugins/local/edu/edge/$(PROVIDER_VERSION)/darwin_amd64
-	mv terraform-provider-edge_v$(PROVIDER_VERSION)  ~/.terraform.d/plugins/local/edu/edge/$(PROVIDER_VERSION)/darwin_amd64
+.PHONY: install
+install: VERSION ?= 0.0.1
+install: PLUGIN_ARCH ?= darwin_arm64
+install:
+	go build -o bin/terraform-provider-edge
+	mkdir -p ~/workspace/terraform-provider-edge
+	cp bin/terraform-provider-edge ~/workspace/terraform-provider-edge

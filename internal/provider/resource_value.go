@@ -80,6 +80,18 @@ type (
 	}
 )
 
+func (v *ValueResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	value, err := v.c.GetValue(ctx, req.ID)
+	if err != nil {
+		resp.Diagnostics.AddError("Error get value", err.Error())
+		return
+	}
+
+	state := valueState(value)
+	diags := resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+}
+
 func (v *ValueResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_value"
 }
@@ -289,6 +301,95 @@ func (v *valueResourceModel) value() (*model.Value, error) {
 		Tests: tests,
 	}
 	return value, nil
+}
+
+func valueState(v *model.Value) *valueResourceModel {
+	var (
+		bools []valueResourceBooleanValueModel
+		strs  []valueResourceStringValueModel
+		jsons []valueResourceJSONValueModel
+		ints  []valueResourceIntegerValueModel
+	)
+
+	for k, val := range v.Variants {
+		if val.BooleanValue != nil {
+			if bools == nil {
+				bools = make([]valueResourceBooleanValueModel, 0, len(v.Variants))
+			}
+			bools = append(bools, valueResourceBooleanValueModel{
+				Variant: types.StringValue(k),
+				Value:   types.BoolValue(val.BooleanValue.Value),
+			})
+		}
+		if val.StringValue != nil {
+			if strs == nil {
+				strs = make([]valueResourceStringValueModel, 0, len(v.Variants))
+			}
+			strs = append(strs, valueResourceStringValueModel{
+				Variant: types.StringValue(k),
+				Value:   types.StringValue(val.StringValue.Value),
+			})
+		}
+		if val.JSONValue != nil {
+			if jsons == nil {
+				jsons = make([]valueResourceJSONValueModel, 0, len(v.Variants))
+			}
+			b, _ := json.Marshal(val.JSONValue.Value)
+			transforms := make([]valueResourceTransformModel, 0, len(val.JSONValue.Transforms))
+			for _, t := range val.JSONValue.Transforms {
+				transforms = append(transforms, valueResourceTransformModel{
+					Spec: types.StringValue(model.TFValueTransformSpec(t.Spec)),
+					Expr: types.StringValue(t.Expr),
+				})
+			}
+			jsons = append(jsons, valueResourceJSONValueModel{
+				Variant:   types.StringValue(k),
+				Value:     types.StringValue(string(b)),
+				Transform: transforms,
+			})
+		}
+		if val.IntegerValue != nil {
+			if ints == nil {
+				ints = make([]valueResourceIntegerValueModel, 0, len(v.Variants))
+			}
+			ints = append(ints, valueResourceIntegerValueModel{
+				Variant: types.StringValue(k),
+				Value:   types.Int64Value(val.IntegerValue.Value),
+			})
+		}
+	}
+
+	targeting := make([]valueResourceTargetingModel, 0, len(v.Targeting.Rules))
+	for _, t := range v.Targeting.Rules {
+		targeting = append(targeting, valueResourceTargetingModel{
+			Variant: types.StringValue(t.Variant),
+			Spec:    types.StringValue(model.TFValueTargetingRuleSpec(t.Spec)),
+			Expr:    types.StringValue(t.Expr),
+		})
+	}
+
+	tests := make([]valueResourceTestModel, 0, len(v.Tests))
+	for _, t := range v.Tests {
+		b, _ := json.Marshal(t.Variables)
+		tests = append(tests, valueResourceTestModel{
+			Variables: types.StringValue(string(b)),
+			Expected:  types.StringValue(t.Expected),
+		})
+	}
+
+	return &valueResourceModel{
+		ID:             types.StringValue(v.ID),
+		ValueID:        types.StringValue(v.ID),
+		Description:    types.StringValue(v.Description),
+		Enabled:        types.BoolValue(v.Enabled),
+		DefaultVariant: types.StringValue(v.DefaultVariant),
+		BooleanValue:   bools,
+		StringValue:    strs,
+		JSONValue:      jsons,
+		IntegerValue:   ints,
+		Targeting:      targeting,
+		Test:           tests,
+	}
 }
 
 func (v *ValueResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
