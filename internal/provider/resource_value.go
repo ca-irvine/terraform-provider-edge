@@ -159,7 +159,7 @@ func (v *ValueResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 							Required: true,
 							Validators: []validator.String{
 								stringvalidator.RegexMatches(
-									regexp.MustCompile(`^{.+}$`),
+									regexp.MustCompile(`^{.*}$`),
 									"Must be map object, not array",
 								),
 							},
