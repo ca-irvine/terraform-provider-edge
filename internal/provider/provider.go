@@ -14,6 +14,7 @@ import (
 	"github.com/ca-irvine/terraform-provider-edge/internal/model"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	tffunc "github.com/hashicorp/terraform-plugin-framework/function"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
@@ -192,6 +193,12 @@ func (p *EdgeProvider) DataSources(_ context.Context) []func() datasource.DataSo
 func (p *EdgeProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewValueResource,
+	}
+}
+
+func (p *EdgeProvider) Functions(_ context.Context) []func() tffunc.Function {
+	return []func() tffunc.Function{
+		NewUnixTimeConverterFunc,
 	}
 }
 
