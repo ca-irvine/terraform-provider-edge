@@ -1,5 +1,7 @@
 package model
 
+import "encoding/json"
+
 type Value struct {
 	ID             string            `json:"id"`
 	Enabled        bool              `json:"enabled"`
@@ -7,8 +9,8 @@ type Value struct {
 	DefaultVariant string            `json:"defaultVariant"`
 	Variants       ValueVariants     `json:"variants"`
 	Targeting      ValueTargeting    `json:"targeting"`
-	CreateTime     string            `json:"createTime,omitempty"`
-	UpdateTime     string            `json:"updateTime,omitempty"`
+	CreateTime     json.Number       `json:"createTime,omitempty"`
+	UpdateTime     json.Number       `json:"updateTime,omitempty"`
 	Tests          []*EvaluationTest `json:"tests,omitempty"`
 }
 
