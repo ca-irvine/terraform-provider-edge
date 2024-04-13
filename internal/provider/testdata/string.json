@@ -2,14 +2,15 @@
   "id": "test-string-value",
   "enabled": true,
   "description": "test string value",
-  "default_variant": "key",
+  "defaultVariant": "key",
   "variants": {
     "key": {
-      "Value": {
-        "StringValue": {
-          "value": "test value"
-        }
+      "stringValue": {
+        "value": "test value"
       }
+    },
+    "none": {
+      "stringValue": {}
     }
   }
 }

@@ -2,16 +2,22 @@
   "id": "test-integer-value",
   "enabled": true,
   "description": "test integer value",
-  "default_variant": "one",
+  "defaultVariant": "one",
   "variants": {
     "one": {
-      "Value": {
-        "IntegerValue": {
-          "value": 1
-        }
+      "integerValue": {
+        "value": 1
       }
+    },
+    "two": {
+      "integerValue": {
+        "value": "2"
+      }
+    },
+    "zero": {
+      "integerValue": {}
     }
   },
-  "create_time": 1681894730,
-  "update_time": 1682089734
+  "createTime": 1681894730,
+  "updateTime": 1682089734
 }

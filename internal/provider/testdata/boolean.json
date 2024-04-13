@@ -2,21 +2,15 @@
   "id": "test-bool-value",
   "enabled": true,
   "description": "test bool value",
-  "default_variant": "off",
+  "defaultVariant": "off",
   "variants": {
     "on": {
-      "Value": {
-        "BooleanValue": {
-          "value": true
-        }
+      "booleanValue": {
+        "value": true
       }
     },
     "off": {
-      "Value": {
-        "BooleanValue": {
-          "value": false
-        }
-      }
+      "booleanValue": {}
     }
   },
   "targeting": {
