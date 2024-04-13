@@ -2,30 +2,37 @@
   "id": "test-json-value",
   "enabled": true,
   "description": "test json value",
-  "default_variant": "json",
+  "defaultVariant": "json",
   "variants": {
     "json": {
-      "Value": {
-        "JsonValue": {
-          "value": {
-            "items": [
-              {"viewable": true, "content": "content1"},
-              {"viewable": true, "content": "content2"},
-              {"viewable": false, "content": "content3"}
-            ]
-          },
-          "transforms": [
+      "jsonValue": {
+        "value": {
+          "items": [
             {
-              "spec": "cel",
-              "expr": "{\"items\":items.map(item, item.viewable ? item : item.deleteKey([\"content\"]))}"
+              "viewable": true,
+              "content": "content1"
             },
             {
-              "spec": "cel",
-              "expr": "{\"items\":items.map(item, item.viewable ? item.selectKey([\"content\"]) : item)}"
+              "viewable": true,
+              "content": "content2"
+            },
+            {
+              "viewable": false,
+              "content": "content3"
             }
           ]
         }
-      }
+      },
+      "transforms": [
+        {
+          "spec": "cel",
+          "expr": "{\"items\":items.map(item, item.viewable ? item : item.deleteKey([\"content\"]))}"
+        },
+        {
+          "spec": "cel",
+          "expr": "{\"items\":items.map(item, item.viewable ? item.selectKey([\"content\"]) : item)}"
+        }
+      ]
     }
   }
 }

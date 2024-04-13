@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"regexp"
+	"strconv"
 
 	"github.com/ca-irvine/terraform-provider-edge/internal/model"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -263,7 +264,7 @@ func (v *valueResourceModel) value() (*model.Value, error) {
 	for _, val := range v.IntegerValue {
 		variants[val.Variant.ValueString()] = model.ValueEvaluation{
 			IntegerValue: &model.ValueIntegerValue{
-				Value: val.Value.ValueInt64(),
+				Value: json.Number(strconv.Itoa(int(val.Value.ValueInt64()))),
 			},
 		}
 	}
@@ -352,9 +353,15 @@ func valueState(v *model.Value) *valueResourceModel {
 			if ints == nil {
 				ints = make([]valueResourceIntegerValueModel, 0, len(v.Variants))
 			}
+			var iv int64
+			var err error
+			iv, err = val.IntegerValue.Value.Int64()
+			if err != nil {
+				iv = 0
+			}
 			ints = append(ints, valueResourceIntegerValueModel{
 				Variant: types.StringValue(k),
-				Value:   types.Int64Value(val.IntegerValue.Value),
+				Value:   types.Int64Value(iv),
 			})
 		}
 	}

@@ -25,20 +25,20 @@ type (
 	}
 
 	ValueBooleanValue struct {
-		Value bool `json:"value"`
+		Value bool `json:"value,omitempty"`
 	}
 
 	ValueStringValue struct {
-		Value string `json:"value"`
+		Value string `json:"value,omitempty"`
 	}
 
 	ValueJSONValue struct {
-		Value      map[string]any    `json:"value"`
+		Value      map[string]any    `json:"value,omitempty"`
 		Transforms []*ValueTransform `json:"transforms,omitempty"`
 	}
 
 	ValueIntegerValue struct {
-		Value int64 `json:"value"`
+		Value json.Number `json:"value,omitempty"`
 	}
 )
 
